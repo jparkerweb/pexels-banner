@@ -1,0 +1,10 @@
+{
+    "id": "pexels-banner",
+    "name": "Pexels Banner",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Apply an image from Pexels as a banner to your notes.",
+    "author": "Justin Parker",
+    "authorUrl": "https://github.com/jparkerweb/pexels-banner",
+    "isDesktopOnly": false
+  }
