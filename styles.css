@@ -20,6 +20,8 @@
     border-radius: 17px !important;
 	pointer-events: none;
 	animation: pexels-banner-image--fade-in 0.4s ease-in-out;
+	will-change: opacity;
+	transform: translateZ(0);
 }
 
 
@@ -126,7 +128,7 @@
     color: var(--text-muted);
 }
 
-/* New spacing class */
+/* spacing class */
 .pexels-banner-spacing {
-    height: 20px; /* Adjust this value to increase or decrease spacing */
+    height: 20px;
 }
