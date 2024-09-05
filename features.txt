@@ -1,8 +1,0 @@
-- The plugin options should have a field for the user to enter their Pexels API key.
-- The plugin options should have a field for the user to select the size of the image they want to use (small, medium, large).
-- The plugin options should have a field for the user to select the orientation of the image they want to use (landscape, portrait, square).
-- The plugin options should have a field for the user to enter the number of random images they want to fetch.
-- The plugin should be applied to each page if the note has a frontmatter key called "pexels-banner".
-- The plugin should use the Pexels API to search for an image (look at the following code as an example).
-- The plugin should insert add a top level class (.pexels-banner)to the page as if it were entered in the `cssClass` frontmatter field.
-- The plugin should insert the retrieved image into the page directly after the rendered frontmatter but before the note content.
