@@ -1,0 +1,10 @@
+{
+    "scripts": {
+      "dev": "node esbuild.config.mjs",
+      "build": "node esbuild.config.mjs production"
+    },
+    "devDependencies": {
+      "esbuild": "0.14.47",
+      "builtin-modules": "3.3.0"
+    }
+  }
