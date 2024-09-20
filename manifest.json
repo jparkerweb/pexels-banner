@@ -7,6 +7,5 @@
     "author": "Justin Parker",
     "authorUrl": "https://www.jparkerweb.com",
     "fundingUrl": "https://ko-fi.com/jparkerweb", 
-    "isDesktopOnly": false,
-    "stylesheets": ["styles.css"]
-  }
+    "isDesktopOnly": false
+}
