@@ -1,4 +1,4 @@
-const { Plugin, PluginSettingTab, Setting } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, requestUrl } = require('obsidian');
 
 const DEFAULT_SETTINGS = {
     apiKey: '',
@@ -184,17 +184,20 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         
         for (const currentKeyword of keywords) {
             try {
-                const response = await fetch(`https://api.pexels.com/v1/search?query=${currentKeyword}&per_page=${this.settings.numberOfImages}&size=${this.settings.imageSize}&orientation=${this.settings.imageOrientation}`, {
+                const response = await requestUrl({
+                    url: `https://api.pexels.com/v1/search?query=${encodeURIComponent(currentKeyword)}&per_page=${this.settings.numberOfImages}&size=${this.settings.imageSize}&orientation=${this.settings.imageOrientation}`,
+                    method: 'GET',
                     headers: {
-                        Authorization: this.settings.apiKey
+                        'Authorization': this.settings.apiKey
                     }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status !== 200) {
+                    console.error('Failed to fetch images:', response.status, response.text);
+                    return null;
                 }
 
-                const data = await response.json();
+                const data = response.json;
 
                 if (data.photos && data.photos.length > 0) {
                     const randomIndex = Math.floor(Math.random() * data.photos.length);
@@ -244,9 +247,6 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('pexels-banner-settings');
 
-        const header = containerEl.createEl('div', {cls: 'pexels-banner-header'});
-        header.createEl('h2', {text: 'Pexels Banner Settings'});
-
         // New section: About this plugin
         const aboutSection = containerEl.createEl('div', {cls: 'pexels-banner-section'});
         aboutSection.createEl('h3', {text: 'About Pexels Banner'});
@@ -268,20 +268,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
 
         // API Key section
-        const apiKeySection = mainContent.createEl('div', {cls: 'pexels-banner-section'});
-        apiKeySection.createEl('h3', {text: 'Pexels API Key'});
-        const apiKeySteps = apiKeySection.createEl('ol');
-        apiKeySteps.createEl('li').createEl('a', {
-            text: 'https://www.pexels.com/api/',
-            href: 'https://www.pexels.com/api/',
-            target: '_blank',
-            rel: 'noopener'
-        });
-        apiKeySteps.createEl('li', {text: 'Signup for a free account or login'});
-        apiKeySteps.createEl('li', {text: 'Create / Copy your API key and paste it below'});
-
-        new Setting(apiKeySection)
-            .setName('API Key')
+        new Setting(mainContent)
+            .setName('API key')
             .setDesc('Enter your Pexels API key')
             .addText(text => text
                 .setPlaceholder('Enter your API key')
@@ -295,12 +283,16 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 setting.controlEl.querySelector('input').style.width = '100%';
             });
 
-        // Image Settings section
-        const imageSettingsSection = mainContent.createEl('div', {cls: 'pexels-banner-section'});
-        imageSettingsSection.createEl('h3', {text: 'Image Settings'});
+        // Add spacing after the API Key section
+        mainContent.createEl('div', {cls: 'pexels-banner-spacing'});
 
-        new Setting(imageSettingsSection)
-            .setName('Image Size')
+        // Image settings section
+        new Setting(mainContent)
+            .setName('Images')
+            .setHeading();
+
+        new Setting(mainContent)
+            .setName('Size')
             .setDesc('Select the size of the image')
             .addDropdown(dropdown => dropdown
                 .addOption('small', 'Small')
@@ -312,8 +304,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(imageSettingsSection)
-            .setName('Image Orientation')
+        new Setting(mainContent)
+            .setName('Orientation')
             .setDesc('Select the orientation of the image')
             .addDropdown(dropdown => dropdown
                 .addOption('landscape', 'Landscape')
@@ -325,8 +317,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(imageSettingsSection)
-            .setName('Number of Images')
+        new Setting(mainContent)
+            .setName('Number of images')
             .setDesc('Enter the number of random images to fetch (1-50)')
             .addText(text => text
                 .setPlaceholder('10')
@@ -346,9 +338,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 inputEl.style.width = '50px';
             });
 
-        // Add new setting for default keywords
-        new Setting(imageSettingsSection)
-            .setName('Default Keywords')
+        new Setting(mainContent)
+            .setName('Default keywords')
             .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results.')
             .addTextArea(text => text
                 .setPlaceholder('Enter keywords, separated by commas')
@@ -365,8 +356,11 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             });
 
         // How to use section
+        new Setting(mainContent)
+            .setName('How to use')
+            .setHeading();
+
         const instructionsEl = mainContent.createEl('div', {cls: 'pexels-banner-section'});
-        instructionsEl.createEl('h3', {text: 'How to Use'});
         instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image.'});
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', {text: 
@@ -380,7 +374,6 @@ pexels-banner: blue turtle
 pexels-banner: https://example.com/image.jpg
 ---`
         });
-
 
         // Footer
         const footerEl = containerEl.createEl('div', {cls: 'pexels-banner-footer'});
