@@ -1,10 +1,11 @@
 # 🚩 Pexels Banner for Obsidian
 
-Pexels Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels API. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
+Pexels Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels API or direct URLs. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
 
 ## Features
 
 - Automatically fetch and display banner images from Pexels based on keywords
+- Use direct URLs for custom images
 - Customize image size and orientation
 - Set default keywords for when no specific keyword is provided
 - Seamless integration with Obsidian's interface
@@ -20,10 +21,16 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 
 1. Obtain a free API key from [Pexels](https://www.pexels.com/api/)
 2. In Obsidian, go to Settings > Pexels Banner and enter your API key
-3. In any note, add a `pexels-banner` field to the frontmatter with keywords for the desired image:
+3. In any note, add a `pexels-banner` field to the frontmatter with keywords for the desired image or a direct URL:
     ```yaml
     ---
     pexels-banner: blue turtle
+    ---
+
+    # Or use a direct URL:
+
+    ---
+    pexels-banner: https://example.com/image.jpg
     ---
     ```
 4. The plugin will automatically fetch and display a relevant banner image at the top of your note

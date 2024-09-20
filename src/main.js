@@ -97,15 +97,22 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async addPexelsBanner(el, ctx) {
         const { frontmatter, file, isContentChange } = ctx;
         if (frontmatter && frontmatter['pexels-banner']) {
-            const keyword = frontmatter['pexels-banner'];
+            const input = frontmatter['pexels-banner'];
             let imageUrl = this.loadedImages.get(file.path);
-            const lastKeyword = this.lastKeywords.get(file.path);
+            const lastInput = this.lastKeywords.get(file.path);
 
-            if (!imageUrl || (isContentChange && keyword !== lastKeyword)) {
-                imageUrl = await this.fetchPexelsImage(keyword);
+            // Check if the input is a URL
+            const isUrl = this.isValidUrl(input);
+
+            if (!imageUrl || (isContentChange && input !== lastInput)) {
+                if (isUrl) {
+                    imageUrl = input;
+                } else {
+                    imageUrl = await this.fetchPexelsImage(input);
+                }
                 if (imageUrl) {
                     this.loadedImages.set(file.path, imageUrl);
-                    this.lastKeywords.set(file.path, keyword);
+                    this.lastKeywords.set(file.path, input);
                 }
             }
 
@@ -213,6 +220,16 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
         console.error('No images found for any keywords, including the random default.');
         return null;
+    }
+
+    // Helper function to check if a string is a valid URL
+    isValidUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
     }
 }
 
@@ -350,11 +367,17 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         // How to use section
         const instructionsEl = mainContent.createEl('div', {cls: 'pexels-banner-section'});
         instructionsEl.createEl('h3', {text: 'How to Use'});
-        instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want.'});
+        instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image.'});
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', {text: 
 `---
 pexels-banner: blue turtle
+---
+
+# Or use a direct URL:
+
+---
+pexels-banner: https://example.com/image.jpg
 ---`
         });
 
