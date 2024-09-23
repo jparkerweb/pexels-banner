@@ -247,24 +247,6 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('pexels-banner-settings');
 
-        // New section: About this plugin
-        const aboutSection = containerEl.createEl('div', {cls: 'pexels-banner-section'});
-        aboutSection.createEl('h3', {text: 'About Pexels Banner'});
-        aboutSection.createEl('p', {text: 'The Pexels Banner plugin allows you to automatically add beautiful banner images to your notes using the Pexels API. You can specify keywords in your note\'s frontmatter, and the plugin will fetch a relevant image to display at the top of your note.'});
-        aboutSection.createEl('p', {text: 'This plugin enhances your note-taking experience by providing visual context and improving the overall aesthetics of your notes.'});
-
-        // Add example image
-        const exampleImg = aboutSection.createEl('img', {
-            attr: {
-                src: 'https://raw.githubusercontent.com/jparkerweb/pexels-banner/main/example.jpg',
-                alt: 'Example of a Pexels banner',
-                style: 'max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;'
-            }
-        });
-
-        // Add spacing after the About section
-        containerEl.createEl('div', {cls: 'pexels-banner-spacing'});
-
         const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
 
         // API Key section
@@ -373,6 +355,15 @@ pexels-banner: blue turtle
 ---
 pexels-banner: https://example.com/image.jpg
 ---`
+        });
+
+        // Add example image
+        const exampleImg = containerEl.createEl('img', {
+            attr: {
+                src: 'https://raw.githubusercontent.com/jparkerweb/pexels-banner/main/example.jpg',
+                alt: 'Example of a Pexels banner',
+                style: 'max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;'
+            }
         });
 
         // Footer
