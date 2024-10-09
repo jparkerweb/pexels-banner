@@ -5,7 +5,8 @@ const DEFAULT_SETTINGS = {
     imageSize: 'medium',
     imageOrientation: 'landscape',
     numberOfImages: 10,
-    defaultKeywords: 'nature,abstract,landscape,technology,art,cityscape,wildlife,ocean,mountains,forest,space,architecture,food,travel,science,music,sports,fashion,business,education,health,culture,history,weather,transportation,industry,people,animals,plants,patterns'
+    defaultKeywords: 'nature,abstract,landscape,technology,art,cityscape,wildlife,ocean,mountains,forest,space,architecture,food,travel,science,music,sports,fashion,business,education,health,culture,history,weather,transportation,industry,people,animals,plants,patterns',
+    yPosition: 50 // Add this line: default to 50% (center)
 };
 
 module.exports = class PexelsBannerPlugin extends Plugin {
@@ -17,6 +18,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         lastRequestTime: 0,
         minInterval: 1000 // 1 second between requests
     };
+    lastYPositions = new Map();
 
     async onload() {
         await this.loadSettings();
@@ -73,9 +75,11 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         if (activeLeaf && activeLeaf.view.file === file) {
             const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
             const newKeyword = frontmatter && frontmatter['pexels-banner'];
+            const newYPosition = frontmatter && (frontmatter['pexels-banner-y-position'] || frontmatter['pexels-banner-y']);
             const oldKeyword = this.lastKeywords.get(file.path);
+            const oldYPosition = this.lastYPositions.get(file.path);
 
-            if (newKeyword !== oldKeyword) {
+            if (newKeyword !== oldKeyword || newYPosition !== oldYPosition) {
                 await this.updateBanner(activeLeaf.view, true);
             }
         }
@@ -91,11 +95,22 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async updateBanner(view, isContentChange) {
         const frontmatter = this.app.metadataCache.getFileCache(view.file)?.frontmatter;
         const contentEl = view.contentEl;
-        await this.addPexelsBanner(contentEl, { frontmatter, file: view.file, isContentChange });
+        const customYPosition = frontmatter && (frontmatter['pexels-banner-y-position'] || frontmatter['pexels-banner-y']);
+        const yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
+        
+        await this.addPexelsBanner(contentEl, { 
+            frontmatter, 
+            file: view.file, 
+            isContentChange,
+            yPosition
+        });
+
+        // Update the lastYPositions Map
+        this.lastYPositions.set(view.file.path, yPosition);
     }
 
     async addPexelsBanner(el, ctx) {
-        const { frontmatter, file, isContentChange } = ctx;
+        const { frontmatter, file, isContentChange, yPosition } = ctx;
         if (frontmatter && frontmatter['pexels-banner']) {
             let input = frontmatter['pexels-banner'];
             
@@ -141,6 +156,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             // Create the banner div
             const bannerDiv = createDiv({ cls: 'pexels-banner-image' });
             bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
+            bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
 
             // Insert the banner div in the appropriate locations
             if (previewView) {
@@ -291,6 +307,14 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
         return null;
     }
+
+    updateAllBanners() {
+        this.app.workspace.iterateAllLeaves(leaf => {
+            if (leaf.view.getViewType() === "markdown") {
+                this.updateBanner(leaf.view, false);
+            }
+        });
+    }
 }
 
 class PexelsBannerSettingTab extends PluginSettingTab {
@@ -394,32 +418,50 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 textarea.style.height = '100px';
             });
 
+        new Setting(mainContent)
+            .setName('Image Vertical Position')
+            .setDesc('Set the vertical position of the image (0-100)')
+            .addSlider(slider => slider
+                .setLimits(0, 100, 1)
+                .setValue(this.plugin.settings.yPosition)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.yPosition = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                })
+            );
+
         // How to use section
         new Setting(mainContent)
             .setName('How to use')
             .setHeading();
 
         const instructionsEl = mainContent.createEl('div', {cls: 'pexels-banner-section'});
-        instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image.'});
+        instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image. You can also specify a custom y-position for the image.'});
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', {text: 
 `---
 pexels-banner: blue turtle
+pexels-banner-y: 30
 ---
 
 # Or use a direct URL:
 ---
 pexels-banner: https://example.com/image.jpg
+pexels-banner-y: 70
 ---
 
 # Or use a path to an image in the vault:
 ---
 pexels-banner: Assets/my-image.png
+pexels-banner-y: 0
 ---
 
 # Or use an Obsidian internal link:
 ---
 pexels-banner: [[example-image.png]]
+pexels-banner-y: 100
 ---`
         });
 
