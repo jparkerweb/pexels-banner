@@ -29,17 +29,18 @@
 /* ------------------------------------------------------------------ */
 /* -- push frontmatter container down to give room to banner image -- */
 /* ------------------------------------------------------------------ */
-.pexels-banner .metadata-container {
-    margin-top: 210px;
-}
 .pexels-banner .frontmatter-container,
 .pexels-banner .metadata-container {
 	position: relative;
 	z-index: 2;
-	margin-top: 150px !important;
+}
+.pexels-banner .markdown-preview-section {
+    margin-top: 150px !important;
 }
 
-/* Settings Page Styles */
+/* -------------------------- */
+/* -- Settings Page Styles -- */
+/* -------------------------- */
 .pexels-banner-settings {
     padding: 20px;
     max-width: 800px;
