@@ -97,18 +97,31 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async addPexelsBanner(el, ctx) {
         const { frontmatter, file, isContentChange } = ctx;
         if (frontmatter && frontmatter['pexels-banner']) {
-            const input = frontmatter['pexels-banner'];
+            let input = frontmatter['pexels-banner'];
+            
+            // If input is an array, try to get the first string element
+            if (Array.isArray(input)) {
+                input = input.flat().find(item => typeof item === 'string') || '';
+            }
+
+            const inputType = this.getInputType(input);
             let imageUrl = this.loadedImages.get(file.path);
             const lastInput = this.lastKeywords.get(file.path);
 
-            // Check if the input is a URL
-            const isUrl = this.isValidUrl(input);
-
             if (!imageUrl || (isContentChange && input !== lastInput)) {
-                if (isUrl) {
+                if (inputType === 'url') {
                     imageUrl = input;
-                } else {
+                } else if (inputType === 'vaultPath') {
+                    imageUrl = await this.getVaultImageUrl(input);
+                } else if (inputType === 'obsidianLink') {
+                    const resolvedFile = this.getPathFromObsidianLink(input);
+                    if (resolvedFile) {
+                        imageUrl = await this.getVaultImageUrl(resolvedFile.path);
+                    }
+                } else if (inputType === 'keyword') {
                     imageUrl = await this.fetchPexelsImage(input);
+                } else {
+                    return; // Exit the function if input is invalid
                 }
                 if (imageUrl) {
                     this.loadedImages.set(file.path, imageUrl);
@@ -225,14 +238,62 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         return null;
     }
 
-    // Helper function to check if a string is a valid URL
-    isValidUrl(string) {
-        try {
-            new URL(string);
-            return true;
-        } catch (_) {
-            return false;
+    getInputType(input) {
+        // If input is an array, try to get the first string element
+        if (Array.isArray(input)) {
+            input = input.flat().find(item => typeof item === 'string') || '';
         }
+
+        // Check if input is a string
+        if (typeof input !== 'string') {
+            return 'invalid';
+        }
+
+        // Trim the input
+        input = input.trim();
+
+        // Check if it's an Obsidian internal link
+        if (input.match(/^\[\[.*\]\]$/)) {
+            return 'obsidianLink';
+        }
+        
+        try {
+            new URL(input);
+            return 'url';
+        } catch (_) {
+            // Check if the input is a valid file path within the vault
+            const file = this.app.vault.getAbstractFileByPath(input);
+            if (file && 'extension' in file) {
+                if (file.extension.match(/^(jpg|jpeg|png|gif|bmp|svg)$/i)) {
+                    return 'vaultPath';
+                }
+            }
+            // If the file doesn't exist in the vault or isn't an image, treat it as a keyword
+            return 'keyword';
+        }
+    }
+
+    getPathFromObsidianLink(link) {
+        // Remove the [[ and ]] from the link
+        const innerLink = link.slice(2, -2);
+        // Split by '|' in case there's an alias, and take the first part
+        const path = innerLink.split('|')[0];
+        // Resolve the path within the vault
+        return this.app.metadataCache.getFirstLinkpathDest(path, '');
+    }
+
+    async getVaultImageUrl(path) {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (file && 'extension' in file) {
+            try {
+                const arrayBuffer = await this.app.vault.readBinary(file);
+                const blob = new Blob([arrayBuffer], { type: `image/${file.extension}` });
+                return URL.createObjectURL(blob);
+            } catch (error) {
+                return null;
+            }
+        }
+        return null;
     }
 }
 
@@ -351,9 +412,18 @@ pexels-banner: blue turtle
 ---
 
 # Or use a direct URL:
-
 ---
 pexels-banner: https://example.com/image.jpg
+---
+
+# Or use a path to an image in the vault:
+---
+pexels-banner: Assets/my-image.png
+---
+
+# Or use an Obsidian internal link:
+---
+pexels-banner: [[example-image.png]]
 ---`
         });
 
