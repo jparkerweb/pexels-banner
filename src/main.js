@@ -99,9 +99,10 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         if (frontmatter && frontmatter['pexels-banner']) {
             let input = frontmatter['pexels-banner'];
             
-            // If input is an array, try to get the first string element
+            // Handle the case where input is an array of arrays
             if (Array.isArray(input)) {
-                input = input.flat().find(item => typeof item === 'string') || '';
+                // Reconstruct the Obsidian link format
+                input = `[[${input.flat(Infinity).join('')}]]`;
             }
 
             const inputType = this.getInputType(input);
@@ -129,34 +130,32 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                 }
             }
 
-            if (imageUrl) {
-                // Find the appropriate parent elements
-                const previewView = el.querySelector('.markdown-preview-view');
-                const sourceView = el.querySelector('.markdown-source-view');
+            // Find the appropriate parent elements
+            const previewView = el.querySelector('.markdown-preview-view');
+            const sourceView = el.querySelector('.markdown-source-view');
 
-                // Remove existing banners if present
-                const existingBanners = el.querySelectorAll('.pexels-banner-image');
-                existingBanners.forEach(banner => banner.remove());
+            // Remove existing banners if present
+            const existingBanners = el.querySelectorAll('.pexels-banner-image');
+            existingBanners.forEach(banner => banner.remove());
 
-                // Create the banner div
-                const bannerDiv = createDiv({ cls: 'pexels-banner-image' });
-                bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
+            // Create the banner div
+            const bannerDiv = createDiv({ cls: 'pexels-banner-image' });
+            bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
 
-                // Insert the banner div in the appropriate locations
-                if (previewView) {
-                    previewView.prepend(bannerDiv.cloneNode(true));
-                }
-                if (sourceView) {
-                    const cmSizer = sourceView.querySelector('.cm-sizer');
-                    if (cmSizer) {
-                        cmSizer.prepend(bannerDiv.cloneNode(true));
-                    } else {
-                        sourceView.prepend(bannerDiv.cloneNode(true));
-                    }
-                }
-
-                el.classList.add('pexels-banner');
+            // Insert the banner div in the appropriate locations
+            if (previewView) {
+                previewView.prepend(bannerDiv.cloneNode(true));
             }
+            if (sourceView) {
+                const cmSizer = sourceView.querySelector('.cm-sizer');
+                if (cmSizer) {
+                    cmSizer.prepend(bannerDiv.cloneNode(true));
+                } else {
+                    sourceView.prepend(bannerDiv.cloneNode(true));
+                }
+            }
+
+            el.classList.add('pexels-banner');
         } else {
             // Remove the banners if 'pexels-banner' is not in frontmatter
             const existingBanners = el.querySelectorAll('.pexels-banner-image');
@@ -239,21 +238,15 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     getInputType(input) {
-        // If input is an array, try to get the first string element
-        if (Array.isArray(input)) {
-            input = input.flat().find(item => typeof item === 'string') || '';
-        }
-
-        // Check if input is a string
         if (typeof input !== 'string') {
             return 'invalid';
         }
 
-        // Trim the input
-        input = input.trim();
+        // Trim the input and remove surrounding quotes if present
+        input = input.trim().replace(/^["'](.*)["']$/, '$1');
 
         // Check if it's an Obsidian internal link
-        if (input.match(/^\[\[.*\]\]$/)) {
+        if (input.includes('[[') && input.includes(']]')) {
             return 'obsidianLink';
         }
         
@@ -274,8 +267,10 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     getPathFromObsidianLink(link) {
-        // Remove the [[ and ]] from the link
-        const innerLink = link.slice(2, -2);
+        // Remove the [[ from the beginning of the link
+        let innerLink = link.startsWith('[[') ? link.slice(2) : link;
+        // Remove the ]] from the end if it exists
+        innerLink = innerLink.endsWith(']]') ? innerLink.slice(0, -2) : innerLink;
         // Split by '|' in case there's an alias, and take the first part
         const path = innerLink.split('|')[0];
         // Resolve the path within the vault
@@ -290,6 +285,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                 const blob = new Blob([arrayBuffer], { type: `image/${file.extension}` });
                 return URL.createObjectURL(blob);
             } catch (error) {
+                console.error('Error reading vault image:', error);
                 return null;
             }
         }
