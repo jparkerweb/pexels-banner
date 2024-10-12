@@ -6,7 +6,10 @@ const DEFAULT_SETTINGS = {
     imageOrientation: 'landscape',
     numberOfImages: 10,
     defaultKeywords: 'nature,abstract,landscape,technology,art,cityscape,wildlife,ocean,mountains,forest,space,architecture,food,travel,science,music,sports,fashion,business,education,health,culture,history,weather,transportation,industry,people,animals,plants,patterns',
-    yPosition: 50 // Add this line: default to 50% (center)
+    yPosition: 50,
+    // Add new fields for custom frontmatter keys
+    customBannerField: 'pexels-banner',
+    customYPositionField: 'pexels-banner-y-position'
 };
 
 module.exports = class PexelsBannerPlugin extends Plugin {
@@ -74,8 +77,10 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view.file === file) {
             const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
-            const newKeyword = frontmatter && frontmatter['pexels-banner'];
-            const newYPosition = frontmatter && (frontmatter['pexels-banner-y-position'] || frontmatter['pexels-banner-y']);
+            const customBannerField = this.settings.customBannerField;
+            const customYPositionField = this.settings.customYPositionField;
+            const newKeyword = frontmatter && frontmatter[customBannerField];
+            const newYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter['pexels-banner-y']);
             const oldKeyword = this.lastKeywords.get(file.path);
             const oldYPosition = this.lastYPositions.get(file.path);
 
@@ -95,14 +100,18 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async updateBanner(view, isContentChange) {
         const frontmatter = this.app.metadataCache.getFileCache(view.file)?.frontmatter;
         const contentEl = view.contentEl;
-        const customYPosition = frontmatter && (frontmatter['pexels-banner-y-position'] || frontmatter['pexels-banner-y']);
+        const customBannerField = this.settings.customBannerField;
+        const customYPositionField = this.settings.customYPositionField;
+        const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter['pexels-banner-y']);
         const yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
         
         await this.addPexelsBanner(contentEl, { 
             frontmatter, 
             file: view.file, 
             isContentChange,
-            yPosition
+            yPosition,
+            customBannerField,
+            customYPositionField
         });
 
         // Update the lastYPositions Map
@@ -110,9 +119,9 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     async addPexelsBanner(el, ctx) {
-        const { frontmatter, file, isContentChange, yPosition } = ctx;
-        if (frontmatter && frontmatter['pexels-banner']) {
-            let input = frontmatter['pexels-banner'];
+        const { frontmatter, file, isContentChange, yPosition, customBannerField, customYPositionField } = ctx;
+        if (frontmatter && frontmatter[customBannerField]) {
+            let input = frontmatter[customBannerField];
             
             // Handle the case where input is an array of arrays
             if (Array.isArray(input)) {
@@ -431,6 +440,66 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     this.plugin.updateAllBanners();
                 })
             );
+
+        // Add new section for custom field names
+        new Setting(mainContent)
+            .setName('Custom Field Names')
+            .setHeading();
+
+        // Add validation function
+        const validateFieldName = (value, otherFieldName) => {
+            if (value === otherFieldName) {
+                new Notice("Field names must be unique!");
+                return false;
+            }
+            return true;
+        };
+
+        new Setting(mainContent)
+            .setName('Banner Field Name')
+            .setDesc('Set a custom field name for the banner in frontmatter')
+            .addText(text => text
+                .setPlaceholder('pexels-banner')
+                .setValue(this.plugin.settings.customBannerField)
+                .onChange(async (value) => {
+                    if (validateFieldName(value, this.plugin.settings.customYPositionField)) {
+                        this.plugin.settings.customBannerField = value;
+                        await this.plugin.saveSettings();
+                    } else {
+                        text.setValue(this.plugin.settings.customBannerField);
+                    }
+                }))
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.customBannerField = DEFAULT_SETTINGS.customBannerField;
+                    await this.plugin.saveSettings();
+                    this.display();
+                }));
+
+        new Setting(mainContent)
+            .setName('Y-Position Field Name')
+            .setDesc('Set a custom field name for the Y-position in frontmatter')
+            .addText(text => text
+                .setPlaceholder('pexels-banner-y-position')
+                .setValue(this.plugin.settings.customYPositionField)
+                .onChange(async (value) => {
+                    if (validateFieldName(value, this.plugin.settings.customBannerField)) {
+                        this.plugin.settings.customYPositionField = value;
+                        await this.plugin.saveSettings();
+                    } else {
+                        text.setValue(this.plugin.settings.customYPositionField);
+                    }
+                }))
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.customYPositionField = DEFAULT_SETTINGS.customYPositionField;
+                    await this.plugin.saveSettings();
+                    this.display();
+                }));
 
         // How to use section
         new Setting(mainContent)
