@@ -1,16 +1,129 @@
-const { Plugin, PluginSettingTab, Setting, requestUrl } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, requestUrl, FuzzySuggestModal } = require('obsidian');
 
 const DEFAULT_SETTINGS = {
     apiKey: '',
     imageSize: 'medium',
     imageOrientation: 'landscape',
     numberOfImages: 10,
-    defaultKeywords: 'nature,abstract,landscape,technology,art,cityscape,wildlife,ocean,mountains,forest,space,architecture,food,travel,science,music,sports,fashion,business,education,health,culture,history,weather,transportation,industry,people,animals,plants,patterns',
+    defaultKeywords: 'nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns',
     yPosition: 50,
-    // Add new fields for custom frontmatter keys
     customBannerField: 'pexels-banner',
-    customYPositionField: 'pexels-banner-y-position'
+    customYPositionField: 'pexels-banner-y-position',
+    folderImages: [] // Add this new field
 };
+
+class FolderSuggestModal extends FuzzySuggestModal {
+    constructor(app, onChoose) {
+        super(app);
+        this.onChoose = onChoose;
+    }
+
+    getItems() {
+        return this.app.vault.getAllLoadedFiles()
+            .filter(file => file.children) // Filter for folders
+            .map(folder => folder.path);
+    }
+
+    getItemText(item) {
+        return item;
+    }
+
+    onChooseItem(item) {
+        this.onChoose(item);
+    }
+}
+
+class FolderImageSetting extends Setting {
+    constructor(containerEl, plugin, folderImage, index) {
+        super(containerEl);
+        this.plugin = plugin;
+        this.folderImage = folderImage;
+        this.index = index;
+
+        this.setClass("folder-image-setting");
+
+        this.settingEl.empty();
+
+        const infoEl = this.settingEl.createDiv("setting-item-info");
+        infoEl.createDiv("setting-item-name");
+        infoEl.createDiv("setting-item-description");
+
+        this.addFolderInput();
+        
+        const controlEl = this.settingEl.createDiv("setting-item-control");
+        this.addImageInput(controlEl);
+        this.addYPositionInput(controlEl);
+        this.addDeleteButton(controlEl);
+    }
+
+    addFolderInput() {
+        const folderInputContainer = this.settingEl.createDiv('folder-input-container');
+        
+        const folderInput = new Setting(folderInputContainer)
+            .setName("Folder path")
+            .addText(text => {
+                text.setPlaceholder("Folder path")
+                    .setValue(this.folderImage.folder || "")
+                    .onChange(async (value) => {
+                        this.folderImage.folder = value;
+                        await this.plugin.saveSettings();
+                    });
+                this.folderInputEl = text.inputEl;
+            });
+
+        folderInput.addButton(button => button
+            .setButtonText("Browse")
+            .onClick(() => {
+                new FolderSuggestModal(this.plugin.app, (chosenPath) => {
+                    this.folderImage.folder = chosenPath;
+                    this.folderInputEl.value = chosenPath;
+                    this.plugin.saveSettings();
+                }).open();
+            }));
+    }
+
+    addImageInput(containerEl) {
+        const imageInput = containerEl.createEl('input', {
+            type: 'text',
+            attr: {
+                spellcheck: 'false',
+                placeholder: 'Image URL or keyword'
+            }
+        });
+        imageInput.value = this.folderImage.image || "";
+        imageInput.addEventListener('change', async () => {
+            this.folderImage.image = imageInput.value;
+            await this.plugin.saveSettings();
+        });
+    }
+
+    addYPositionInput(containerEl) {
+        const slider = containerEl.createEl('input', {
+            type: 'range',
+            cls: 'slider',
+            attr: {
+                min: '0',
+                max: '100',
+                step: '1'
+            }
+        });
+        slider.value = this.folderImage.yPosition || "50";
+        slider.addEventListener('change', async () => {
+            this.folderImage.yPosition = parseInt(slider.value);
+            await this.plugin.saveSettings();
+        });
+    }
+
+    addDeleteButton(containerEl) {
+        const deleteButton = containerEl.createEl('button');
+        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+        deleteButton.addEventListener('click', async () => {
+            this.plugin.settings.folderImages.splice(this.index, 1);
+            await this.plugin.saveSettings();
+            this.settingEl.remove();
+        });
+    }
+}
 
 module.exports = class PexelsBannerPlugin extends Plugin {
     debounceTimer = null;
@@ -51,10 +164,24 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        
+        // Ensure folderImages is always an array
+        if (!Array.isArray(this.settings.folderImages)) {
+            this.settings.folderImages = [];
+        }
     }
 
     async saveSettings() {
         await this.saveData(this.settings);
+        // Clear the image cache when settings are saved
+        this.loadedImages.clear();
+        this.lastKeywords.clear();
+        this.imageCache.clear();
+        // Trigger an update for the active leaf
+        const activeLeaf = this.app.workspace.activeLeaf;
+        if (activeLeaf && activeLeaf.view.getViewType() === "markdown") {
+            await this.updateBanner(activeLeaf.view, true);
+        }
     }
 
     async handleActiveLeafChange(leaf) {
@@ -62,6 +189,24 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         if (view.getViewType() === "markdown") {
             await this.updateBanner(view, false);
         }
+    }
+
+    getFolderSpecificImage(filePath) {
+        const folderPath = this.getFolderPath(filePath);
+        for (const folderImage of this.settings.folderImages) {
+            if (folderPath.startsWith(folderImage.folder)) {
+                return {
+                    image: folderImage.image,
+                    yPosition: folderImage.yPosition
+                };
+            }
+        }
+        return null;
+    }
+
+    getFolderPath(filePath) {
+        const lastSlashIndex = filePath.lastIndexOf('/');
+        return lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : '';
     }
 
     debouncedHandleMetadataChange(file) {
@@ -103,7 +248,24 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         const customBannerField = this.settings.customBannerField;
         const customYPositionField = this.settings.customYPositionField;
         const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter['pexels-banner-y']);
-        const yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
+        
+        let yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
+        let bannerImage = frontmatter && frontmatter[customBannerField];
+
+        // Check for folder-specific image if no frontmatter image is specified
+        if (!bannerImage) {
+            const folderSpecific = this.getFolderSpecificImage(view.file.path);
+            if (folderSpecific) {
+                bannerImage = folderSpecific.image;
+                yPosition = customYPosition !== undefined ? customYPosition : folderSpecific.yPosition;
+            }
+        }
+        
+        // Clear the cached image for this file to force a reload
+        if (isContentChange) {
+            this.loadedImages.delete(view.file.path);
+            this.lastKeywords.delete(view.file.path);
+        }
         
         await this.addPexelsBanner(contentEl, { 
             frontmatter, 
@@ -111,7 +273,8 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             isContentChange,
             yPosition,
             customBannerField,
-            customYPositionField
+            customYPositionField,
+            bannerImage
         });
 
         // Update the lastYPositions Map
@@ -119,9 +282,9 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     async addPexelsBanner(el, ctx) {
-        const { frontmatter, file, isContentChange, yPosition, customBannerField, customYPositionField } = ctx;
-        if (frontmatter && frontmatter[customBannerField]) {
-            let input = frontmatter[customBannerField];
+        const { frontmatter, file, isContentChange, yPosition, customBannerField, customYPositionField, bannerImage } = ctx;
+        if (bannerImage) {
+            let input = bannerImage;
             
             // Handle the case where input is an array of arrays
             if (Array.isArray(input)) {
@@ -182,7 +345,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
             el.classList.add('pexels-banner');
         } else {
-            // Remove the banners if 'pexels-banner' is not in frontmatter
+            // Remove the banners if no banner image is specified
             const existingBanners = el.querySelectorAll('.pexels-banner-image');
             existingBanners.forEach(banner => banner.remove());
             el.classList.remove('pexels-banner');
@@ -320,7 +483,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     updateAllBanners() {
         this.app.workspace.iterateAllLeaves(leaf => {
             if (leaf.view.getViewType() === "markdown") {
-                this.updateBanner(leaf.view, false);
+                this.updateBanner(leaf.view, true);
             }
         });
     }
@@ -342,7 +505,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         // API Key section
         new Setting(mainContent)
             .setName('API key')
-            .setDesc('Enter your Pexels API key')
+            .setDesc('Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It\'s not needed for using direct URLs or local images.')
             .addText(text => text
                 .setPlaceholder('Enter your API key')
                 .setValue(this.plugin.settings.apiKey)
@@ -352,20 +515,22 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 })
             )
             .then(setting => {
+                setting.settingEl.addClass('flex-column');
+                setting.settingEl.querySelector('.setting-item-control').style.width = '100%';
                 setting.controlEl.querySelector('input').style.width = '100%';
+                setting.controlEl.style.display = 'block';
+                setting.controlEl.style.marginTop = '10px';
             });
-
-        // Add spacing after the API Key section
-        mainContent.createEl('div', {cls: 'pexels-banner-spacing'});
 
         // Image settings section
         new Setting(mainContent)
             .setName('Images')
+            .setDesc('Configure settings for images fetched from Pexels. These settings apply when using keywords to fetch random images.')
             .setHeading();
 
         new Setting(mainContent)
             .setName('Size')
-            .setDesc('Select the size of the image')
+            .setDesc('Select the size of the image - (Pexels API only)')
             .addDropdown(dropdown => dropdown
                 .addOption('small', 'Small')
                 .addOption('medium', 'Medium')
@@ -378,7 +543,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         new Setting(mainContent)
             .setName('Orientation')
-            .setDesc('Select the orientation of the image')
+            .setDesc('Select the orientation of the image - (Pexels API only)')
             .addDropdown(dropdown => dropdown
                 .addOption('landscape', 'Landscape')
                 .addOption('portrait', 'Portrait')
@@ -391,7 +556,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         new Setting(mainContent)
             .setName('Number of images')
-            .setDesc('Enter the number of random images to fetch (1-50)')
+            .setDesc('Enter the number of random images to fetch (1-50) - (Pexels API only)')
             .addText(text => text
                 .setPlaceholder('10')
                 .setValue(String(this.plugin.settings.numberOfImages || 10))
@@ -412,19 +577,33 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         new Setting(mainContent)
             .setName('Default keywords')
-            .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results.')
+            .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (Pexels API only)')
             .addTextArea(text => text
                 .setPlaceholder('Enter keywords, separated by commas')
                 .setValue(this.plugin.settings.defaultKeywords)
                 .onChange(async (value) => {
                     this.plugin.settings.defaultKeywords = value;
                     await this.plugin.saveSettings();
-                }))
+                })
+            )
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.defaultKeywords = DEFAULT_SETTINGS.defaultKeywords;
+                    await this.plugin.saveSettings();
+                    this.display(); // Refresh the entire settings tab
+                })
+            )
             .then(setting => {
+                setting.settingEl.addClass('flex-column');
+                setting.settingEl.querySelector('.setting-item-control').style.width = '100%';
                 const textarea = setting.controlEl.querySelector('textarea');
                 textarea.style.width = '100%';
-                textarea.style.minWidth = '200px';
+                textarea.style.minWidth = '100%';
                 textarea.style.height = '100px';
+                setting.controlEl.style.display = 'block';
+                setting.controlEl.style.marginTop = '10px';
             });
 
         new Setting(mainContent)
@@ -444,6 +623,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         // Add new section for custom field names
         new Setting(mainContent)
             .setName('Custom Field Names')
+            .setDesc('Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.')
             .setHeading();
 
         // Add validation function
@@ -501,7 +681,28 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     this.display();
                 }));
 
-        // How to use section
+        // Add new section for folder images
+        new Setting(mainContent)
+            .setName('Folder Images')
+            .setDesc('Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.')
+            .setHeading();
+
+        const folderImagesContainer = mainContent.createDiv('folder-images-container');
+
+        this.plugin.settings.folderImages.forEach((folderImage, index) => {
+            new FolderImageSetting(folderImagesContainer, this.plugin, folderImage, index);
+        });
+
+        new Setting(folderImagesContainer)
+            .addButton(button => button
+                .setButtonText("Add Folder Image")
+                .onClick(async () => {
+                    this.plugin.settings.folderImages.push({folder: "", image: "", yPosition: 50});
+                    await this.plugin.saveSettings();
+                    this.display(); // Refresh the entire settings tab
+                }));
+
+        // Move the "How to use" section below the folder images
         new Setting(mainContent)
             .setName('How to use')
             .setHeading();
@@ -546,7 +747,7 @@ pexels-banner-y: 100
         // Footer
         const footerEl = containerEl.createEl('div', {cls: 'pexels-banner-footer'});
         footerEl.createEl('p', {
-            text: 'All settings are saved automatically when changed.',
+            text: 'All settings are saved and applied automatically when changed.',
             cls: 'pexels-banner-footer-text'
         });
     }

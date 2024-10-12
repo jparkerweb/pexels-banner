@@ -1,6 +1,6 @@
 # 🚩 Pexels Banner for Obsidian
 
-Pexels Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels API or direct URLs. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
+Pexels Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels API, direct URLs, or folder-specific settings. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
 
 ## Features
 
@@ -8,9 +8,10 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 - Use direct URLs for custom images
 - Use local images from your vault
 - Use Obsidian internal links to images
+- Set folder-specific default banner images
 - Customize image size and orientation
 - Set default keywords for when no specific keyword is provided
-- Adjust vertical position of the banner image globally or per note
+- Adjust vertical position of the banner image globally, per folder, or per note
 - Customize frontmatter field names for banner and Y-position
 - Seamless integration with Obsidian's interface
 
@@ -58,6 +59,18 @@ pexels-banner-y-position: 30
 ---
 ```
 
+### Folder-Specific Banners
+
+You can set default banner images for entire folders:
+
+1. Go to Settings > Pexels Banner
+2. Scroll down to the "Folder Images" section
+3. Click "Add Folder Image"
+4. Enter the folder path, image URL or keyword, and Y-position
+5. Repeat for additional folders as needed
+
+Folder-specific settings will apply to all notes in that folder (and subfolders) that don't have their own banner specified in the frontmatter.
+
 ## Configuration
 
 In the plugin settings, you can customize:
@@ -68,6 +81,7 @@ In the plugin settings, you can customize:
 - Default keywords for when no specific keyword is provided
 - Global y-position of the banner image (0-100)
 - Custom field names for banner and Y-position in frontmatter
+- Folder-specific default banner images
 
 The global y-position can be overridden on a per-note basis using the `pexels-banner-y-position` frontmatter field (or your custom field name).
 
