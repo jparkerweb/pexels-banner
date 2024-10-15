@@ -188,6 +188,19 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         const view = leaf.view;
         if (view.getViewType() === "markdown") {
             await this.updateBanner(view, false);
+            
+            // Update embedded notes
+            const embeddedNotes = view.contentEl.querySelectorAll('.internal-embed');
+            for (const embed of embeddedNotes) {
+                const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute('src'), '');
+                if (embedFile) {
+                    const embedView = {
+                        file: embedFile,
+                        contentEl: embed
+                    };
+                    await this.updateBanner(embedView, false);
+                }
+            }
         }
     }
 
@@ -238,7 +251,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async handleLayoutChange() {
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view.getViewType() === "markdown") {
-            await this.updateBanner(activeLeaf.view, false);
+            await this.updateBanner(activeLeaf.view, true);  // Set isContentChange to true
         }
     }
 
@@ -267,6 +280,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             this.lastKeywords.delete(view.file.path);
         }
         
+        // Always call addPexelsBanner, even if bannerImage is undefined
         await this.addPexelsBanner(contentEl, { 
             frontmatter, 
             file: view.file, 
@@ -279,10 +293,28 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
         // Update the lastYPositions Map
         this.lastYPositions.set(view.file.path, yPosition);
+
+        // Handle embedded notes
+        const embeddedNotes = contentEl.querySelectorAll('.internal-embed');
+        for (const embed of embeddedNotes) {
+            const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute('src'), '');
+            if (embedFile) {
+                const embedView = {
+                    file: embedFile,
+                    contentEl: embed
+                };
+                await this.updateBanner(embedView, isContentChange);
+            }
+        }
     }
 
     async addPexelsBanner(el, ctx) {
         const { frontmatter, file, isContentChange, yPosition, customBannerField, customYPositionField, bannerImage } = ctx;
+        
+        // Remove all existing banners within this element
+        const existingBanners = el.querySelectorAll('.pexels-banner-image');
+        existingBanners.forEach(banner => banner.remove());
+        
         if (bannerImage) {
             let input = bannerImage;
             
@@ -317,37 +349,33 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                 }
             }
 
-            // Find the appropriate parent elements
-            const previewView = el.querySelector('.markdown-preview-view');
-            const sourceView = el.querySelector('.markdown-source-view');
-
-            // Remove existing banners if present
-            const existingBanners = el.querySelectorAll('.pexels-banner-image');
-            existingBanners.forEach(banner => banner.remove());
-
             // Create the banner div
             const bannerDiv = createDiv({ cls: 'pexels-banner-image' });
             bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
             bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
 
-            // Insert the banner div in the appropriate locations
-            if (previewView) {
-                previewView.prepend(bannerDiv.cloneNode(true));
-            }
-            if (sourceView) {
-                const cmSizer = sourceView.querySelector('.cm-sizer');
+            // Find the appropriate parent element and insert the banner
+            if (el.classList.contains('markdown-source-view')) {
+                const cmSizer = el.querySelector('.cm-sizer');
                 if (cmSizer) {
-                    cmSizer.prepend(bannerDiv.cloneNode(true));
+                    cmSizer.prepend(bannerDiv);
                 } else {
-                    sourceView.prepend(bannerDiv.cloneNode(true));
+                    el.prepend(bannerDiv);
                 }
+            } else if (el.classList.contains('markdown-reading-view')) {
+                const previewView = el.querySelector('.markdown-preview-view');
+                if (previewView) {
+                    previewView.prepend(bannerDiv);
+                } else {
+                    el.prepend(bannerDiv);
+                }
+            } else {
+                // For other cases (like embedded views), just prepend to the element
+                el.prepend(bannerDiv);
             }
 
             el.classList.add('pexels-banner');
         } else {
-            // Remove the banners if no banner image is specified
-            const existingBanners = el.querySelectorAll('.pexels-banner-image');
-            existingBanners.forEach(banner => banner.remove());
             el.classList.remove('pexels-banner');
             
             // Clear the stored image and keyword for this file
