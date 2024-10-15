@@ -25,10 +25,6 @@
 }
 
 
-/* fix overflow issue with embedded notes */
-.internal-embed:not(.image-embed) {
-    overflow: hidden;
-}
 
 /* ------------------------------------------------------------------ */
 /* -- push frontmatter container down to give room to banner image -- */
@@ -38,12 +34,8 @@
 	position: relative;
 	z-index: 2;
 }
-.pexels-banner .markdown-preview-sizer {
+.pexels-banner .markdown-preview-section {
     margin-top: 150px !important;
-}
-/* fix for embedded notes */
-.internal-embed > .markdown-embed-content .markdown-preview-sizer {
-    margin-top: unset !important;
 }
 
 /* -------------------------- */
