@@ -56,7 +56,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         // Trigger an update for the active leaf
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view.getViewType() === "markdown") {
-            console.log('saveSettings', activeLeaf.view);
+            // console.log('saveSettings', activeLeaf.view);
             await this.updateBanner(activeLeaf.view, true);
         }
     }
@@ -99,16 +99,29 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         const contentEl = view.contentEl;
         const customBannerField = this.settings.customBannerField;
         const customYPositionField = this.settings.customYPositionField;
-        const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter['banner-y']);
+        const customContentStartField = this.settings.customContentStartField;
         
-        let yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
+        let yPosition = this.settings.yPosition;
+        let contentStartPosition = this.settings.contentStartPosition;
         let bannerImage = frontmatter && frontmatter[customBannerField];
 
-        if (!bannerImage) {
-            const folderSpecific = this.getFolderSpecificImage(view.file.path);
-            if (folderSpecific) {
-                bannerImage = folderSpecific.image;
-                yPosition = customYPosition !== undefined ? customYPosition : folderSpecific.yPosition;
+        // Check for folder-specific settings
+        const folderSpecific = this.getFolderSpecificImage(view.file.path);
+        if (folderSpecific) {
+            bannerImage = bannerImage || folderSpecific.image;
+            yPosition = folderSpecific.yPosition;
+            contentStartPosition = folderSpecific.contentStartPosition;
+        }
+
+        // Override with note-specific settings if available
+        if (frontmatter) {
+            const customYPosition = frontmatter[customYPositionField];
+            if (customYPosition !== undefined) {
+                yPosition = customYPosition;
+            }
+            const customContentStart = frontmatter[customContentStartField];
+            if (customContentStart !== undefined) {
+                contentStartPosition = customContentStart;
             }
         }
         
@@ -122,9 +135,10 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             file: view.file, 
             isContentChange,
             yPosition,
+            contentStartPosition,
             customBannerField,
             customYPositionField,
-            customContentStartField: this.settings.customContentStartField,
+            customContentStartField,
             bannerImage,
             isReadingView: view.getMode && view.getMode() === 'preview'
         });
@@ -147,7 +161,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     async addPexelsBanner(el, ctx) {
-        const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
+        const { frontmatter, file, isContentChange, yPosition, contentStartPosition, bannerImage, isReadingView } = ctx;
         const viewContent = el;
 
         // Check if this is an embedded note
@@ -199,9 +213,12 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             bannerDiv.style.display = 'none';
             this.loadedImages.delete(file.path);
             this.lastKeywords.delete(file.path);
+            // Reset the content start position when there's no banner
+            this.applyContentStartPosition(viewContent, 0);
         }
 
-        this.applyContentStartPosition(viewContent, this.settings.contentStartPosition);
+        // Apply the content start position
+        this.applyContentStartPosition(viewContent, contentStartPosition);
     }
 
     setupMutationObserver() {
@@ -403,7 +420,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     updateAllBanners() {
         this.app.workspace.iterateAllLeaves(leaf => {
             if (leaf.view.getViewType() === "markdown") {
-                console.log('updateAllBanners', leaf.view);
+                // console.log('updateAllBanners', leaf.view);
                 this.updateBanner(leaf.view, true);
             }
         });

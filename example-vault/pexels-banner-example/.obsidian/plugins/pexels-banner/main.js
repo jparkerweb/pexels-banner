@@ -301,29 +301,29 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     codeEl.createEl("code", {
       text: `---
 banner: blue turtle
-pexels-banner-y: 30
-pexels-banner-content-start: 200
+banner-y: 30
+content-start: 200
 ---
 
 # Or use a direct URL:
 ---
 banner: https://example.com/image.jpg
-pexels-banner-y: 70
-pexels-banner-content-start: 180
+banner-y: 70
+content-start: 180
 ---
 
 # Or use a path to an image in the vault:
 ---
 banner: Assets/my-image.png
-pexels-banner-y: 0
-pexels-banner-content-start: 100
+banner-y: 0
+content-start: 100
 ---
 
 # Or use an Obsidian internal link:
 ---
 banner: [[example-image.png]]
-pexels-banner-y: 100
-pexels-banner-content-start: 50
+banner-y: 100
+content-start: 50
 ---`
     });
     const exampleImg = containerEl.createEl("img", {
@@ -404,7 +404,6 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     this.imageCache.clear();
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view.getViewType() === "markdown") {
-      console.log("saveSettings", activeLeaf.view);
       await this.updateBanner(activeLeaf.view, true);
     }
   }
@@ -441,14 +440,24 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     const contentEl = view.contentEl;
     const customBannerField = this.settings.customBannerField;
     const customYPositionField = this.settings.customYPositionField;
-    const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter["pexels-banner-y"]);
-    let yPosition = customYPosition !== void 0 ? customYPosition : this.settings.yPosition;
+    const customContentStartField = this.settings.customContentStartField;
+    let yPosition = this.settings.yPosition;
+    let contentStartPosition = this.settings.contentStartPosition;
     let bannerImage = frontmatter && frontmatter[customBannerField];
-    if (!bannerImage) {
-      const folderSpecific = this.getFolderSpecificImage(view.file.path);
-      if (folderSpecific) {
-        bannerImage = folderSpecific.image;
-        yPosition = customYPosition !== void 0 ? customYPosition : folderSpecific.yPosition;
+    const folderSpecific = this.getFolderSpecificImage(view.file.path);
+    if (folderSpecific) {
+      bannerImage = bannerImage || folderSpecific.image;
+      yPosition = folderSpecific.yPosition;
+      contentStartPosition = folderSpecific.contentStartPosition;
+    }
+    if (frontmatter) {
+      const customYPosition = frontmatter[customYPositionField];
+      if (customYPosition !== void 0) {
+        yPosition = customYPosition;
+      }
+      const customContentStart = frontmatter[customContentStartField];
+      if (customContentStart !== void 0) {
+        contentStartPosition = customContentStart;
       }
     }
     if (isContentChange) {
@@ -460,9 +469,10 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
       file: view.file,
       isContentChange,
       yPosition,
+      contentStartPosition,
       customBannerField,
       customYPositionField,
-      customContentStartField: this.settings.customContentStartField,
+      customContentStartField,
       bannerImage,
       isReadingView: view.getMode && view.getMode() === "preview"
     });
@@ -481,7 +491,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     }
   }
   async addPexelsBanner(el, ctx) {
-    const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
+    const { frontmatter, file, isContentChange, yPosition, contentStartPosition, bannerImage, isReadingView } = ctx;
     const viewContent = el;
     const isEmbedded = viewContent.classList.contains("internal-embed");
     if (!isEmbedded && !viewContent.classList.contains("view-content")) {
@@ -521,8 +531,9 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
       bannerDiv.style.display = "none";
       this.loadedImages.delete(file.path);
       this.lastKeywords.delete(file.path);
+      this.applyContentStartPosition(viewContent, 0);
     }
-    this.applyContentStartPosition(viewContent, this.settings.contentStartPosition);
+    this.applyContentStartPosition(viewContent, contentStartPosition);
   }
   setupMutationObserver() {
     this.observer = new MutationObserver((mutations) => {
@@ -681,7 +692,6 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
   updateAllBanners() {
     this.app.workspace.iterateAllLeaves((leaf) => {
       if (leaf.view.getViewType() === "markdown") {
-        console.log("updateAllBanners", leaf.view);
         this.updateBanner(leaf.view, true);
       }
     });

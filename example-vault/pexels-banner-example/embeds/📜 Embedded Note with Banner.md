@@ -1,6 +1,6 @@
 ---
 banner: banners/combine-scripts.jpg
-banner-y: 23
+banner-y: 22
 ---
 # Embedded Note with its own Banner
 
