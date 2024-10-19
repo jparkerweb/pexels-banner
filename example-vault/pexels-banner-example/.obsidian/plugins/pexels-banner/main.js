@@ -165,7 +165,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }, 100));
     // Update the debouncedHandleScroll to use the class method
     __publicField(this, "debouncedHandleScroll", this.debounce(() => {
-      console.log("Scroll event detected (debounced)");
       this.checkAndReaddBanner();
     }, 200));
     // Keep this debounced version
@@ -236,10 +235,8 @@ module.exports = class PexelsBannerPlugin extends Plugin {
   async updateBanner(view, isContentChange) {
     var _a;
     if (!view || !view.file) {
-      console.log("View or file is undefined, skipping banner update");
       return;
     }
-    console.log(`Updating banner for file: ${view.file.path}`);
     const frontmatter = (_a = this.app.metadataCache.getFileCache(view.file)) == null ? void 0 : _a.frontmatter;
     const contentEl = view.contentEl;
     const customBannerField = this.settings.customBannerField;
@@ -247,19 +244,16 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter["pexels-banner-y"]);
     let yPosition = customYPosition !== void 0 ? customYPosition : this.settings.yPosition;
     let bannerImage = frontmatter && frontmatter[customBannerField];
-    console.log(`Banner image from frontmatter: ${bannerImage}`);
     if (!bannerImage) {
       const folderSpecific = this.getFolderSpecificImage(view.file.path);
       if (folderSpecific) {
         bannerImage = folderSpecific.image;
         yPosition = customYPosition !== void 0 ? customYPosition : folderSpecific.yPosition;
-        console.log(`Using folder-specific banner: ${bannerImage}`);
       }
     }
     if (isContentChange) {
       this.loadedImages.delete(view.file.path);
       this.lastKeywords.delete(view.file.path);
-      console.log(`Content changed, cleared cached image for ${view.file.path}`);
     }
     await this.addPexelsBanner(contentEl, {
       frontmatter,
@@ -274,11 +268,9 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     });
     this.lastYPositions.set(view.file.path, yPosition);
     const embeddedNotes = contentEl.querySelectorAll(".internal-embed");
-    console.log(`Found ${embeddedNotes.length} embedded notes`);
     for (const embed of embeddedNotes) {
       const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute("src"), "");
       if (embedFile) {
-        console.log(`Processing embedded note: ${embedFile.path}`);
         const embedView = {
           file: embedFile,
           contentEl: embed,
@@ -289,15 +281,10 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
   }
   async addPexelsBanner(el, ctx) {
-    var _a, _b;
     const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
     const viewContent = el;
-    console.log(`Adding Pexels banner for file: ${file.path}`);
-    console.log(`Banner image: ${bannerImage}`);
-    console.log(`Is reading view: ${isReadingView}`);
     const isEmbedded = viewContent.classList.contains("internal-embed");
     if (!isEmbedded && !viewContent.classList.contains("view-content")) {
-      console.log(`Not the right element: ${(_a = el.classList) == null ? void 0 : _a.toString()}`);
       return;
     }
     viewContent.classList.toggle("pexels-banner", !!bannerImage);
@@ -308,45 +295,29 @@ module.exports = class PexelsBannerPlugin extends Plugin {
       container = isReadingView ? viewContent.querySelector(".markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)") : viewContent.querySelector(".cm-sizer");
     }
     if (!container) {
-      console.log(`No container found for ${file.path}`);
       return;
-    } else {
-      console.log(`Container found: ${(_b = container.classList) == null ? void 0 : _b.toString()}`);
     }
     let bannerDiv = container.querySelector(":scope > .pexels-banner-image");
     if (!bannerDiv) {
-      console.log(`Creating new banner div for ${file.path}`);
       bannerDiv = createDiv({ cls: "pexels-banner-image" });
       container.insertBefore(bannerDiv, container.firstChild);
-    } else {
-      console.log(`Banner div already exists for ${file.path}`);
     }
     if (bannerImage) {
       let imageUrl = this.loadedImages.get(file.path);
       const lastInput = this.lastKeywords.get(file.path);
-      console.log(`Cached image URL: ${imageUrl}`);
-      console.log(`Last input: ${lastInput}`);
       if (!imageUrl || isContentChange && bannerImage !== lastInput) {
-        console.log(`Fetching new image URL for ${file.path}`);
         imageUrl = await this.getImageUrl(this.getInputType(bannerImage), bannerImage);
         if (imageUrl) {
-          console.log(`New image URL fetched: ${imageUrl}`);
           this.loadedImages.set(file.path, imageUrl);
           this.lastKeywords.set(file.path, bannerImage);
-        } else {
-          console.log(`Failed to fetch image URL for ${file.path}`);
         }
       }
       if (imageUrl) {
-        console.log(`Setting background image for ${file.path}`);
         bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
         bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
         bannerDiv.style.display = "block";
-      } else {
-        console.log(`No image URL available for ${file.path}`);
       }
     } else {
-      console.log(`No banner image specified for ${file.path}, hiding banner div`);
       bannerDiv.style.display = "none";
       this.loadedImages.delete(file.path);
       this.lastKeywords.delete(file.path);
@@ -405,7 +376,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     console.log("checkAndReaddBanner called");
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
-      console.log("Checking banner existence");
       const view = activeLeaf.view;
       const containers = this.findBannerContainers(view.contentEl);
       let bannerExists = false;
@@ -417,10 +387,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
       }
       if (!bannerExists) {
-        console.log("Banner not found, re-adding");
         await this.updateBanner(view, false);
-      } else {
-        console.log("Banner exists");
       }
     }
   }

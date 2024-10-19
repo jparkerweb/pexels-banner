@@ -11,17 +11,3 @@ this is an embedded note with a banner being applied using the `image path`
 .
 
 .
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
-
-.
