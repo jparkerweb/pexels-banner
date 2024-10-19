@@ -51,11 +51,12 @@ pexels-banner: /path/to/local/image.jpg
 pexels-banner: [[path/to/internal/image.jpg]]
 ---
 
-# Specify a custom y-position for the image (0-100):
+# Specify a custom y-position for the image (0-100) and content start position (in pixels):
 
 ---
 pexels-banner: nature
 pexels-banner-y-position: 30
+content-start-position: 90
 ---
 ```
 
@@ -100,6 +101,24 @@ For example, if you set the custom banner field name to "my-banner" and the cust
 ---
 my-banner: sunset
 my-y-pos: 60
+---
+```
+
+### Content Start Position
+
+You can set a custom start position for the content below the banner image:
+
+1. Go to Settings > Pexels Banner
+2. Scroll down to the "Content Start Position" section
+3. Enter a value (in pixels) to adjust where the content starts below the banner
+4. This setting can be overridden on a per-note basis using the `content-start-position` frontmatter field
+
+For example, to set a custom start position in your frontmatter:
+
+```yaml
+---
+pexels-banner: nature
+content-start-position: 100
 ---
 ```
 

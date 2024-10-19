@@ -2,6 +2,17 @@
 
 All notable changes to the Pexels Banner plugin will be documented in this file.
 
+## [1.4.0] - 2024-10-13
+
+### Added
+- Content Start Position: Allow users to set a custom start position for content below the banner image
+- New setting in the plugin configuration for Content Start Position
+- Frontmatter field `content-start-position` to override the global setting on a per-note basis
+- Added compatibility with Obsidian's lasted version release 1.7.2+ (deferred views)
+
+### Known Issues
+- Embedding notes with banner images is currently not supported, but will be in a future release
+
 ## [1.3.0] - 2024-10-12
 
 ### Added

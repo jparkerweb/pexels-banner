@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "c19e95eb8bf07aa8",
+        "id": "cd48381e9fb99b8e",
         "type": "tabs",
         "children": [
           {
-            "id": "a038b029b5a3a701",
+            "id": "fdbb42f36d041c61",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -19,6 +19,34 @@
               },
               "icon": "lucide-file",
               "title": "🚩 Pexels-Banner"
+            }
+          },
+          {
+            "id": "d7f2455202f5ccd0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Embedded Note with Banner.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Embedded Note with Banner"
+            }
+          },
+          {
+            "id": "c6a72557cbee8467",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Embedded Note without Banner.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Embedded Note without Banner"
             }
           }
         ]
@@ -93,7 +121,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "1a.md",
+                "file": "🚩 Pexels-Banner.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +131,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for 1a"
+              "title": "Backlinks for 🚩 Pexels-Banner"
             }
           },
           {
@@ -112,12 +140,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "1a.md",
+                "file": "🚩 Pexels-Banner.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from 1a"
+              "title": "Outgoing links from 🚩 Pexels-Banner"
             }
           },
           {
@@ -139,10 +167,10 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "1a.md"
+                "file": "🚩 Pexels-Banner.md"
               },
               "icon": "lucide-list",
-              "title": "Outline of 1a"
+              "title": "Outline of 🚩 Pexels-Banner"
             }
           }
         ]
@@ -162,17 +190,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "a038b029b5a3a701",
+  "active": "fdbb42f36d041c61",
   "lastOpenFiles": [
-    "1a.md",
-    "Embedded Note with Banner.md",
-    "Embedded Note without Banner.md",
+    "3 no banner.md",
     "2 banner.md",
     "1b.md",
+    "1a.md",
+    "Embedded Note with Banner.md",
     "🚩 Pexels-Banner.md",
-    "3 no banner.md",
-    "Sample2.md",
-    "Sample.md",
+    "Embedded Note without Banner.md",
     "banners/turtle.jpg",
     "banners",
     "banners/combine-scripts.jpg"
