@@ -1,5 +1,5 @@
 ---
-banner: banners/combine-scripts.jpg
+banner: banners/jp-cover3a.jpg
 banner-y: 22
 ---
 # Embedded Note with its own Banner
