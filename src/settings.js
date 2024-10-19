@@ -36,11 +36,12 @@ class FolderSuggestModal extends FuzzySuggestModal {
 }
 
 class FolderImageSetting extends Setting {
-    constructor(containerEl, plugin, folderImage, index) {
+    constructor(containerEl, plugin, folderImage, index, onDelete) {
         super(containerEl);
         this.plugin = plugin;
         this.folderImage = folderImage;
         this.index = index;
+        this.onDelete = onDelete;
 
         this.setClass("folder-image-setting");
 
@@ -155,6 +156,9 @@ class FolderImageSetting extends Setting {
             this.plugin.settings.folderImages.splice(this.index, 1);
             await this.plugin.saveSettings();
             this.settingEl.remove();
+            if (this.onDelete) {
+                this.onDelete();
+            }
         });
         deleteButton.addEventListener('mouseover', () => {
             deleteButton.style.color = 'red';
@@ -178,8 +182,51 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
 
-        // API Key section
-        new Setting(mainContent)
+        // Create tabs
+        const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['API', 'General', 'Folders', 'Examples']);
+
+        // API tab content
+        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'API'}});
+        this.createAPISettings(apiTab);
+
+        // General tab content
+        const generalTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'General'}});
+        this.createGeneralSettings(generalTab);
+
+        // Folders tab content
+        const foldersTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Folders'}});
+        this.createFolderSettings(foldersTab);
+
+        // Examples tab content
+        const examplesTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Examples'}});
+        this.createExampleSettings(examplesTab);
+
+        // Activate the first tab
+        tabsEl.firstChild.click();
+    }
+
+    createTabs(containerEl, tabNames) {
+        const tabsEl = containerEl.createEl('div', {cls: 'pexels-banner-settings-tabs'});
+        const tabContentContainer = containerEl.createEl('div', {cls: 'pexels-banner-settings-tab-content-container'});
+
+        tabNames.forEach(tabName => {
+            const tabEl = tabsEl.createEl('button', {cls: 'pexels-banner-settings-tab', text: tabName});
+            tabEl.addEventListener('click', () => {
+                // Deactivate all tabs
+                tabsEl.querySelectorAll('.pexels-banner-settings-tab').forEach(tab => tab.removeClass('active'));
+                tabContentContainer.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+
+                // Activate clicked tab
+                tabEl.addClass('active');
+                tabContentContainer.querySelector(`.tab-content[data-tab="${tabName}"]`).style.display = 'block';
+            });
+        });
+
+        return { tabsEl, tabContentContainer };
+    }
+
+    createAPISettings(containerEl) {
+        new Setting(containerEl)
             .setName('API key')
             .setDesc('Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It\'s not needed for using direct URLs or local images.')
             .addText(text => text
@@ -189,22 +236,14 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     this.plugin.settings.apiKey = value;
                     await this.plugin.saveSettings();
                 })
-            )
-            .then(setting => {
-                setting.settingEl.addClass('flex-column');
-                setting.settingEl.querySelector('.setting-item-control').style.width = '100%';
-                setting.controlEl.querySelector('input').style.width = '100%';
-                setting.controlEl.style.display = 'block';
-                setting.controlEl.style.marginTop = '10px';
-            });
+            );
 
-        // Image settings section
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Images')
             .setDesc('Configure settings for images fetched from Pexels. These settings apply when using keywords to fetch random images.')
             .setHeading();
 
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Size')
             .setDesc('Select the size of the image - (Pexels API only)')
             .addDropdown(dropdown => dropdown
@@ -217,7 +256,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Orientation')
             .setDesc('Select the orientation of the image - (Pexels API only)')
             .addDropdown(dropdown => dropdown
@@ -230,7 +269,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Number of images')
             .setDesc('Enter the number of random images to fetch (1-50) - (Pexels API only)')
             .addText(text => text
@@ -251,38 +290,38 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 inputEl.style.width = '50px';
             });
 
-        new Setting(mainContent)
+        const defaultKeywordsSetting = new Setting(containerEl)
             .setName('Default keywords')
             .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (Pexels API only)')
-            .addTextArea(text => text
-                .setPlaceholder('Enter keywords, separated by commas')
-                .setValue(this.plugin.settings.defaultKeywords)
-                .onChange(async (value) => {
-                    this.plugin.settings.defaultKeywords = value;
-                    await this.plugin.saveSettings();
-                })
-            )
+            .addTextArea(text => {
+                text
+                    .setPlaceholder('Enter keywords, separated by commas')
+                    .setValue(this.plugin.settings.defaultKeywords)
+                    .onChange(async (value) => {
+                        this.plugin.settings.defaultKeywords = value;
+                        await this.plugin.saveSettings();
+                    });
+                text.inputEl.style.width = '100%';
+                text.inputEl.style.marginTop = '15px';
+                text.inputEl.style.height = '90px';
+            })
             .addExtraButton(button => button
                 .setIcon('reset')
                 .setTooltip('Reset to default')
                 .onClick(async () => {
                     this.plugin.settings.defaultKeywords = DEFAULT_SETTINGS.defaultKeywords;
                     await this.plugin.saveSettings();
-                    this.display(); // Refresh the entire settings tab
+                    this.display();
                 })
-            )
-            .then(setting => {
-                setting.settingEl.addClass('flex-column');
-                setting.settingEl.querySelector('.setting-item-control').style.width = '100%';
-                const textarea = setting.controlEl.querySelector('textarea');
-                textarea.style.width = '100%';
-                textarea.style.minWidth = '100%';
-                textarea.style.height = '100px';
-                setting.controlEl.style.display = 'block';
-                setting.controlEl.style.marginTop = '10px';
-            });
+            );
 
-        new Setting(mainContent)
+        defaultKeywordsSetting.settingEl.dataset.id = 'defaultKeywords'; // Add this line
+        defaultKeywordsSetting.settingEl.style.display = 'flex';
+        defaultKeywordsSetting.settingEl.style.flexDirection = 'column';
+    }
+
+    createGeneralSettings(containerEl) {
+        new Setting(containerEl)
             .setName('Image Vertical Position')
             .setDesc('Set the vertical position of the image (0-100)')
             .addSlider(slider => slider
@@ -296,8 +335,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 })
             );
 
-        // Add new setting for global content start position
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Content Start Position')
             .setDesc('Set the default vertical position where the content starts (in pixels)')
             .addText(text => text
@@ -318,22 +356,12 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 inputEl.style.width = '60px';
             });
 
-        // Add new section for custom field names
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Custom Field Names')
             .setDesc('Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.')
             .setHeading();
 
-        // Add validation function
-        const validateFieldName = (value, otherFieldName) => {
-            if (value === otherFieldName) {
-                new Notice("Field names must be unique!");
-                return false;
-            }
-            return true;
-        };
-
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Banner Field Name')
             .setDesc('Set a custom field name for the banner in frontmatter')
             .addText(text => {
@@ -341,8 +369,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     .setPlaceholder('pexels-banner')
                     .setValue(this.plugin.settings.customBannerField)
                     .onChange(async (value) => {
-                        if (validateFieldName(value, this.plugin.settings.customYPositionField) && 
-                            validateFieldName(value, this.plugin.settings.customContentStartField)) {
+                        if (this.validateFieldName(value, this.plugin.settings.customYPositionField) && 
+                            this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
                             this.plugin.settings.customBannerField = value;
                             await this.plugin.saveSettings();
                         } else {
@@ -360,7 +388,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     this.display();
                 }));
 
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Y-Position Field Name')
             .setDesc('Set a custom field name for the Y-position in frontmatter')
             .addText(text => {
@@ -368,8 +396,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     .setPlaceholder('pexels-banner-y-position')
                     .setValue(this.plugin.settings.customYPositionField)
                     .onChange(async (value) => {
-                        if (validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            validateFieldName(value, this.plugin.settings.customContentStartField)) {
+                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
+                            this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
                             this.plugin.settings.customYPositionField = value;
                             await this.plugin.saveSettings();
                         } else {
@@ -387,7 +415,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     this.display();
                 }));
 
-        new Setting(mainContent)
+        new Setting(containerEl)
             .setName('Content Start Position Field Name')
             .setDesc('Set a custom field name for the content start position in frontmatter')
             .addText(text => {
@@ -395,8 +423,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     .setPlaceholder('pexels-banner-content-start')
                     .setValue(this.plugin.settings.customContentStartField)
                     .onChange(async (value) => {
-                        if (validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            validateFieldName(value, this.plugin.settings.customYPositionField)) {
+                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
+                            this.validateFieldName(value, this.plugin.settings.customYPositionField)) {
                             this.plugin.settings.customContentStartField = value;
                             await this.plugin.saveSettings();
                         } else {
@@ -413,35 +441,43 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.display();
                 }));
+    }
 
-        // Add new section for folder images
-        new Setting(mainContent)
+    createFolderSettings(containerEl) {
+        new Setting(containerEl)
             .setName('Folder Images')
             .setDesc('Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.')
             .setHeading();
 
-        const folderImagesContainer = mainContent.createDiv('folder-images-container');
+        const folderImagesContainer = containerEl.createDiv('folder-images-container');
 
-        this.plugin.settings.folderImages.forEach((folderImage, index) => {
-            new FolderImageSetting(folderImagesContainer, this.plugin, folderImage, index);
-        });
+        const updateFolderSettings = () => {
+            folderImagesContainer.empty();
+            this.plugin.settings.folderImages.forEach((folderImage, index) => {
+                new FolderImageSetting(folderImagesContainer, this.plugin, folderImage, index, updateFolderSettings);
+            });
+        };
 
-        new Setting(folderImagesContainer)
+        updateFolderSettings();
+
+        // Move this button outside of updateFolderSettings
+        new Setting(containerEl)
             .addButton(button => button
-                .setButtonText("Add Folder Image")
+                .setButtonText("+ Add Folder Image Setting")
                 .onClick(async () => {
                     this.plugin.settings.folderImages.push({folder: "", image: "", yPosition: 50, contentStartPosition: 150});
                     await this.plugin.saveSettings();
-                    this.display(); // Refresh the entire settings tab
+                    updateFolderSettings();
                 }));
+    }
 
-        // Move the "How to use" section below the folder images
-        new Setting(mainContent)
+    createExampleSettings(containerEl) {
+        new Setting(containerEl)
             .setName('How to use')
             .setHeading();
 
-        const instructionsEl = mainContent.createEl('div', {cls: 'pexels-banner-section'});
-        instructionsEl.createEl('p', {text: 'Add a "pexels-banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image. You can also specify a custom y-position for the image.'});
+        const instructionsEl = containerEl.createEl('div', {cls: 'pexels-banner-section'});
+        instructionsEl.createEl('p', {text: 'Add a "banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image. You can also specify a custom y-position for the image.'});
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', {text: 
 `---
@@ -473,20 +509,21 @@ content-start: 50
         });
 
         // Add example image
-        const exampleImg = containerEl.createEl('img', {
+        containerEl.createEl('img', {
             attr: {
                 src: 'https://raw.githubusercontent.com/jparkerweb/pexels-banner/main/example.jpg',
                 alt: 'Example of a Pexels banner',
                 style: 'max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;'
             }
         });
+    }
 
-        // Footer
-        const footerEl = containerEl.createEl('div', {cls: 'pexels-banner-footer'});
-        footerEl.createEl('p', {
-            text: 'All settings are saved and applied automatically when changed.',
-            cls: 'pexels-banner-footer-text'
-        });
+    validateFieldName(value, otherFieldName) {
+        if (value === otherFieldName) {
+            new Notice("Field names must be unique!");
+            return false;
+        }
+        return true;
     }
 }
 
