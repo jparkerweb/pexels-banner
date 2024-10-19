@@ -33,13 +33,9 @@
 /* ------------------------------------------------------------------ */
 /* -- push frontmatter container down to give room to banner image -- */
 /* ------------------------------------------------------------------ */
-.pexels-banner .frontmatter-container,
-.pexels-banner .metadata-container {
-	position: relative;
-	z-index: 2;
-}
-.pexels-banner .markdown-preview-sizer {
-    margin-top: 150px !important;
+.pexels-banner .cm-sizer:first-of-type,
+.pexels-banner .markdown-preview-sizer:first-of-type {
+    padding-top: var(--pexels-banner-content-start, 150px);
 }
 /* fix for embedded notes */
 .internal-embed > .markdown-embed-content .markdown-preview-sizer {
@@ -122,6 +118,19 @@
 .pexels-banner-settings .setting-item-control {
     justify-content: flex-end;
 }
+
+.setting-item.folder-image-setting {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+}
+.setting-item.folder-image-setting > .folder-input-container {
+	display: flex;
+	width: 100%;
+}
+.setting-item.folder-image-setting > .setting-item-control {
+	justify-content: flex-start;
+}
+
 
 .pexels-banner-settings input[type="text"],
 .pexels-banner-settings select {
