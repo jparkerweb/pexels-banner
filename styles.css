@@ -38,8 +38,9 @@
     padding-top: var(--pexels-banner-content-start, 150px);
 }
 /* fix for embedded notes */
-.internal-embed > .markdown-embed-content .markdown-preview-sizer {
-    margin-top: unset !important;
+.internal-embed > .markdown-embed-content .cm-sizer:first-of-type,
+.internal-embed > .markdown-embed-content .markdown-preview-sizer:first-of-type {
+    padding-top: unset !important;
 }
 
 /* -------------------------- */

@@ -165,7 +165,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }, 100));
     // Update the debouncedHandleScroll to use the class method
     __publicField(this, "debouncedHandleScroll", this.debounce(() => {
-      console.log("Scroll event detected (debounced)");
       this.checkAndReaddBanner();
     }, 200));
     // Keep this debounced version
@@ -236,7 +235,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
   async updateBanner(view, isContentChange) {
     var _a;
     if (!view || !view.file) {
-      console.log("View or file is undefined, skipping banner update");
       return;
     }
     const frontmatter = (_a = this.app.metadataCache.getFileCache(view.file)) == null ? void 0 : _a.frontmatter;
@@ -266,37 +264,48 @@ module.exports = class PexelsBannerPlugin extends Plugin {
       customYPositionField,
       customContentStartField: this.settings.customContentStartField,
       bannerImage,
-      isReadingView: view.getMode() === "preview"
+      isReadingView: view.getMode && view.getMode() === "preview"
     });
     this.lastYPositions.set(view.file.path, yPosition);
+    const embeddedNotes = contentEl.querySelectorAll(".internal-embed");
+    for (const embed of embeddedNotes) {
+      const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute("src"), "");
+      if (embedFile) {
+        const embedView = {
+          file: embedFile,
+          contentEl: embed,
+          getMode: () => "preview"
+        };
+        await this.updateBanner(embedView, false);
+      }
+    }
   }
   async addPexelsBanner(el, ctx) {
-    var _a, _b, _c;
     const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
     const viewContent = el;
-    if (!viewContent.classList.contains("view-content")) {
-      console.log(`not the right element: ${(_a = el.classList) == null ? void 0 : _a.toString()}`);
+    const isEmbedded = viewContent.classList.contains("internal-embed");
+    if (!isEmbedded && !viewContent.classList.contains("view-content")) {
       return;
     }
     viewContent.classList.toggle("pexels-banner", !!bannerImage);
-    let container = isReadingView ? viewContent.querySelector(".markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)") : viewContent.querySelector(".cm-sizer");
-    if (!container) {
-      console.log(`no container`);
-      return;
+    let container;
+    if (isEmbedded) {
+      container = viewContent.querySelector(".markdown-embed-content");
     } else {
-      console.log(`container: ${(_b = container.classList) == null ? void 0 : _b.toString()}`);
+      container = isReadingView ? viewContent.querySelector(".markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)") : viewContent.querySelector(".cm-sizer");
+    }
+    if (!container) {
+      return;
     }
     let bannerDiv = container.querySelector(":scope > .pexels-banner-image");
     if (!bannerDiv) {
       bannerDiv = createDiv({ cls: "pexels-banner-image" });
       container.insertBefore(bannerDiv, container.firstChild);
-    } else {
-      console.log(`bannerDiv already exists. Parent: ${(_c = bannerDiv.parentElement.classList) == null ? void 0 : _c.toString()}`);
     }
     if (bannerImage) {
       let imageUrl = this.loadedImages.get(file.path);
       const lastInput = this.lastKeywords.get(file.path);
-      if (!imageUrl || isContentChange && input !== lastInput) {
+      if (!imageUrl || isContentChange && bannerImage !== lastInput) {
         imageUrl = await this.getImageUrl(this.getInputType(bannerImage), bannerImage);
         if (imageUrl) {
           this.loadedImages.set(file.path, imageUrl);
@@ -367,7 +376,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     console.log("checkAndReaddBanner called");
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
-      console.log("Checking banner existence");
       const view = activeLeaf.view;
       const containers = this.findBannerContainers(view.contentEl);
       let bannerExists = false;
@@ -379,24 +387,21 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
       }
       if (!bannerExists) {
-        console.log("Banner not found, re-adding");
         await this.updateBanner(view, false);
-      } else {
-        console.log("Banner exists");
       }
     }
   }
-  async getImageUrl(inputType, input2) {
+  async getImageUrl(inputType, input) {
     switch (inputType) {
       case "url":
-        return input2;
+        return input;
       case "vaultPath":
-        return await this.getVaultImageUrl(input2);
+        return await this.getVaultImageUrl(input);
       case "obsidianLink":
-        const resolvedFile = this.getPathFromObsidianLink(input2);
+        const resolvedFile = this.getPathFromObsidianLink(input);
         return resolvedFile ? await this.getVaultImageUrl(resolvedFile.path) : null;
       case "keyword":
-        return await this.fetchPexelsImage(input2);
+        return await this.fetchPexelsImage(input);
       default:
         return null;
     }
@@ -459,19 +464,19 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     console.error("No images found for any keywords, including the random default.");
     return null;
   }
-  getInputType(input2) {
-    if (typeof input2 !== "string") {
+  getInputType(input) {
+    if (typeof input !== "string") {
       return "invalid";
     }
-    input2 = input2.trim().replace(/^["'](.*)["']$/, "$1");
-    if (input2.includes("[[") && input2.includes("]]")) {
+    input = input.trim().replace(/^["'](.*)["']$/, "$1");
+    if (input.includes("[[") && input.includes("]]")) {
       return "obsidianLink";
     }
     try {
-      new URL(input2);
+      new URL(input);
       return "url";
     } catch (_) {
-      const file = this.app.vault.getAbstractFileByPath(input2);
+      const file = this.app.vault.getAbstractFileByPath(input);
       if (file && "extension" in file) {
         if (file.extension.match(/^(jpg|jpeg|png|gif|bmp|svg)$/i)) {
           return "vaultPath";

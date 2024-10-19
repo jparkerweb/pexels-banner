@@ -256,7 +256,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
     async updateBanner(view, isContentChange) {
         if (!view || !view.file) {
-            console.log('View or file is undefined, skipping banner update');
             return;
         }
 
@@ -291,48 +290,63 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             customYPositionField,
             customContentStartField: this.settings.customContentStartField,
             bannerImage,
-            isReadingView: view.getMode() === 'preview'
+            isReadingView: view.getMode && view.getMode() === 'preview'
         });
 
         this.lastYPositions.set(view.file.path, yPosition);
+
+        // Process embedded notes
+        const embeddedNotes = contentEl.querySelectorAll('.internal-embed');
+        for (const embed of embeddedNotes) {
+            const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute('src'), '');
+            if (embedFile) {
+                const embedView = {
+                    file: embedFile,
+                    contentEl: embed,
+                    getMode: () => 'preview'
+                };
+                await this.updateBanner(embedView, false);
+            }
+        }
     }
 
     async addPexelsBanner(el, ctx) {
         const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
         const viewContent = el;
 
-        if (!viewContent.classList.contains('view-content')) {
-            console.log(`not the right element: ${el.classList?.toString()}`);
+        // Check if this is an embedded note
+        const isEmbedded = viewContent.classList.contains('internal-embed');
+
+        if (!isEmbedded && !viewContent.classList.contains('view-content')) {
             return;
         }
 
         viewContent.classList.toggle('pexels-banner', !!bannerImage);
 
-        let container = isReadingView 
-            ? viewContent.querySelector('.markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)')
-            : viewContent.querySelector('.cm-sizer');
+        let container;
+        if (isEmbedded) {
+            container = viewContent.querySelector('.markdown-embed-content');
+        } else {
+            container = isReadingView 
+                ? viewContent.querySelector('.markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)')
+                : viewContent.querySelector('.cm-sizer');
+        }
 
         if (!container) {
-            console.log(`no container`);
             return;
-        } else {
-            console.log(`container: ${container.classList?.toString()}`);
         }
 
         let bannerDiv = container.querySelector(':scope > .pexels-banner-image');
         if (!bannerDiv) {
             bannerDiv = createDiv({ cls: 'pexels-banner-image' });
             container.insertBefore(bannerDiv, container.firstChild);
-        } else {
-            console.log(`bannerDiv already exists. Parent: ${bannerDiv.parentElement.classList?.toString()}`);
-            // return;
         }
 
         if (bannerImage) {
             let imageUrl = this.loadedImages.get(file.path);
             const lastInput = this.lastKeywords.get(file.path);
 
-            if (!imageUrl || (isContentChange && input !== lastInput)) {
+            if (!imageUrl || (isContentChange && bannerImage !== lastInput)) {
                 imageUrl = await this.getImageUrl(this.getInputType(bannerImage), bannerImage);
                 if (imageUrl) {
                     this.loadedImages.set(file.path, imageUrl);
@@ -421,7 +435,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
     // Update the debouncedHandleScroll to use the class method
     debouncedHandleScroll = this.debounce(() => {
-        console.log('Scroll event detected (debounced)');
+        // console.log('Scroll event detected (debounced)');
         this.checkAndReaddBanner();
     }, 200);
 
@@ -436,7 +450,6 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         console.log('checkAndReaddBanner called');
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view instanceof MarkdownView) {
-            console.log('Checking banner existence');
             const view = activeLeaf.view;
             const containers = this.findBannerContainers(view.contentEl);
             let bannerExists = false;
@@ -450,10 +463,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             }
 
             if (!bannerExists) {
-                console.log('Banner not found, re-adding');
                 await this.updateBanner(view, false);
-            } else {
-                console.log('Banner exists');
             }
         }
     }
