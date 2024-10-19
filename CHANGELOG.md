@@ -2,7 +2,12 @@
 
 All notable changes to the Pexels Banner plugin will be documented in this file.
 
-## [1.4.0] - 2024-10-13
+## [1.4.1] - 2024-10-19
+
+### Bug Fixes
+- Fixed issue where banner images were not being displayed in embedded notes
+
+## [1.4.0] - 2024-10-18
 
 ### Added
 - Content Start Position: Allow users to set a custom start position for content below the banner image
