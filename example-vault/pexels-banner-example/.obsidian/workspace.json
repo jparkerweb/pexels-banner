@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "🚩 Pexels-Banner.md",
+                "file": "embeds/📃 Embedded Note without Banner.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "🚩 Pexels-Banner"
+              "title": "📃 Embedded Note without Banner"
             }
           }
         ]
@@ -164,16 +164,16 @@
   },
   "active": "b934d993d77a6470",
   "lastOpenFiles": [
-    "embeds/📃 Embedded Note without Banner.md",
     "embeds/📜 Embedded Note with Banner.md",
     "🚩 Pexels-Banner.md",
+    "embeds/📃 Embedded Note without Banner.md",
+    "banners/turtle.jpg",
+    "banners/combine-scripts.jpg",
     "embeds",
     "1b.md",
     "1a.md",
     "3 no banner.md",
     "2 banner.md",
-    "banners/turtle.jpg",
-    "banners",
-    "banners/combine-scripts.jpg"
+    "banners"
   ]
 }

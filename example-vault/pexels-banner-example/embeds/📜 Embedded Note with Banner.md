@@ -1,6 +1,6 @@
 ---
-pexels-banner: banners/combine-scripts.jpg
-pexels-banner-y-position: 23
+banner: banners/combine-scripts.jpg
+banner-y: 23
 ---
 # Embedded Note with its own Banner
 

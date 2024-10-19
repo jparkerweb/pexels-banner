@@ -1,6 +1,5 @@
 ---
-pexels-banner: "[[turtle.jpg]]"
-pexels-banner-y-position: 20
+banner: "[[turtle.jpg]]"
 ---
 
 # 🚩 Pexels-Banner Example Vault

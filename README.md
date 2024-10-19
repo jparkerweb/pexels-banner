@@ -26,35 +26,35 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 
 1. Obtain a free API key from [Pexels](https://www.pexels.com/api/)
 2. In Obsidian, go to Settings > Pexels Banner and enter your API key
-3. In any note, add a `pexels-banner` field to the frontmatter with keywords for the desired image, a direct URL, a path to a local image, or an Obsidian internal link:
+3. In any note, add a `banner` field to the frontmatter with keywords for the desired image, a direct URL, a path to a local image, or an Obsidian internal link:
 
 ```yaml
 ---
-pexels-banner: blue turtle
+banner: blue turtle
 ---
 
 # Or use a direct URL:
 
 ---
-pexels-banner: https://example.com/image.jpg
+banner: https://example.com/image.jpg
 ---
 
 # Or use a local image:
 
 ---
-pexels-banner: /path/to/local/image.jpg
+banner: /path/to/local/image.jpg
 ---
 
 # Or use an Obsidian internal link:
 
 ---
-pexels-banner: [[path/to/internal/image.jpg]]
+banner: [[path/to/internal/image.jpg]]
 ---
 
 # Specify a custom y-position for the image (0-100) and content start position (in pixels):
 
 ---
-pexels-banner: nature
+banner: nature
 pexels-banner-y-position: 30
 content-start-position: 90
 ---
@@ -84,7 +84,7 @@ In the plugin settings, you can customize:
 - Custom field names for banner and Y-position in frontmatter
 - Folder-specific default banner images
 
-The global y-position can be overridden on a per-note basis using the `pexels-banner-y-position` frontmatter field (or your custom field name).
+The global y-position can be overridden on a per-note basis using the `banner-y` frontmatter field (or your custom field name).
 
 ### Custom Field Names
 
@@ -111,14 +111,14 @@ You can set a custom start position for the content below the banner image:
 1. Go to Settings > Pexels Banner
 2. Scroll down to the "Content Start Position" section
 3. Enter a value (in pixels) to adjust where the content starts below the banner
-4. This setting can be overridden on a per-note basis using the `content-start-position` frontmatter field
+4. This setting can be overridden on a per-note basis using the `content-start` frontmatter field
 
 For example, to set a custom start position in your frontmatter:
 
 ```yaml
 ---
-pexels-banner: nature
-content-start-position: 100
+banner: nature
+content-start: 100
 ---
 ```
 
