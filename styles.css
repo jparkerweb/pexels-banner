@@ -1,0 +1,164 @@
+@keyframes pexels-banner-image--fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ------------------------------------------------------------------ */
+/* -- configure default: move banner image to top, fade/size, etc. -- */
+/* ------------------------------------------------------------------ */
+.pexels-banner-image {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	background-size: cover; 
+	background-position: 50% 50%;
+	overflow: hidden;  
+	mask-image: linear-gradient(to bottom,black -75%,transparent);
+	-webkit-mask-image: linear-gradient(to bottom,black -75%,transparent);
+	height: 350px;
+    border-radius: 17px !important;
+	pointer-events: none;
+	animation: pexels-banner-image--fade-in 0.4s ease-in-out;
+	will-change: opacity;
+	transform: translateZ(0);
+}
+
+
+/* fix overflow issue with embedded notes */
+.internal-embed:not(.image-embed) {
+    overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/* -- push frontmatter container down to give room to banner image -- */
+/* ------------------------------------------------------------------ */
+.pexels-banner .cm-sizer:first-of-type,
+.pexels-banner .markdown-preview-sizer:first-of-type {
+    padding-top: var(--pexels-banner-content-start, 150px);
+}
+/* fix for embedded notes */
+.internal-embed > .markdown-embed-content .markdown-preview-sizer {
+    margin-top: unset !important;
+}
+
+/* -------------------------- */
+/* -- Settings Page Styles -- */
+/* -------------------------- */
+.pexels-banner-settings {
+    padding: 20px;
+    max-width: 800px;
+    margin: 50px auto 0 auto;
+}
+
+.pexels-banner-header {
+    text-align: center;
+    margin-bottom: 30px;
+    background-color: var(--background-secondary);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pexels-banner-header h2 {
+    margin-bottom: 10px;
+    color: var(--text-accent);
+}
+
+.pexels-banner-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.pexels-banner-section {
+    background-color: var(--background-secondary);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pexels-banner-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--text-accent);
+    font-size: 1.2em;
+}
+
+.pexels-banner-section ol {
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+
+.pexels-banner-section pre {
+    background-color: var(--background-primary);
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.pexels-banner-footer {
+    margin-top: 30px;
+    text-align: center;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+.pexels-banner-settings .setting-item.setting-item-heading {
+    border-top: 1px solid var(--background-modifier-border) !important;
+    padding-top: 50px !important;
+}
+.pexels-banner-settings .setting-item {
+    border-top: none;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.pexels-banner-settings .setting-item-control {
+    justify-content: flex-end;
+}
+
+.setting-item.folder-image-setting {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+}
+.setting-item.folder-image-setting > .folder-input-container {
+	display: flex;
+	width: 100%;
+}
+.setting-item.folder-image-setting > .setting-item-control {
+	justify-content: flex-start;
+}
+
+
+.pexels-banner-settings input[type="text"],
+.pexels-banner-settings select {
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+    padding: 5px 30px 5px 10px;
+}
+
+.pexels-banner-settings .dropdown {
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+}
+
+.pexels-banner-settings .setting-item-description {
+    color: var(--text-muted);
+}
+
+/* spacing class */
+.pexels-banner-spacing {
+    height: 20px;
+}
+
+/* utility classes */
+.flex-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+}

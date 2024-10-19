@@ -1,0 +1,11 @@
+{
+    "scripts": {
+        "dev": "node esbuild.config.mjs",
+        "test-build": "node esbuild.config.mjs production && cp styles.css main.js manifest.json example-vault/pexels-banner-example/.obsidian/plugins/pexels-banner",
+        "build": "node esbuild.config.mjs production"
+    },
+    "devDependencies": {
+        "builtin-modules": "4.0.0",
+        "esbuild": "0.24.0"
+    }
+}
