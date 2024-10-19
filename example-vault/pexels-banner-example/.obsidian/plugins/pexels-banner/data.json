@@ -7,7 +7,14 @@
   "yPosition": 35,
   "customBannerField": "banner",
   "customYPositionField": "banner-y",
-  "folderImages": [],
+  "folderImages": [
+    {
+      "folder": "",
+      "image": "",
+      "yPosition": 50,
+      "contentStartPosition": 150
+    }
+  ],
   "contentStartPosition": 150,
   "customContentStartField": "content-start"
 }
