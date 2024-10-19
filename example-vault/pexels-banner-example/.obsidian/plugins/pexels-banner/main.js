@@ -239,6 +239,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
       console.log("View or file is undefined, skipping banner update");
       return;
     }
+    console.log(`Updating banner for file: ${view.file.path}`);
     const frontmatter = (_a = this.app.metadataCache.getFileCache(view.file)) == null ? void 0 : _a.frontmatter;
     const contentEl = view.contentEl;
     const customBannerField = this.settings.customBannerField;
@@ -246,16 +247,19 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     const customYPosition = frontmatter && (frontmatter[customYPositionField] || frontmatter["pexels-banner-y"]);
     let yPosition = customYPosition !== void 0 ? customYPosition : this.settings.yPosition;
     let bannerImage = frontmatter && frontmatter[customBannerField];
+    console.log(`Banner image from frontmatter: ${bannerImage}`);
     if (!bannerImage) {
       const folderSpecific = this.getFolderSpecificImage(view.file.path);
       if (folderSpecific) {
         bannerImage = folderSpecific.image;
         yPosition = customYPosition !== void 0 ? customYPosition : folderSpecific.yPosition;
+        console.log(`Using folder-specific banner: ${bannerImage}`);
       }
     }
     if (isContentChange) {
       this.loadedImages.delete(view.file.path);
       this.lastKeywords.delete(view.file.path);
+      console.log(`Content changed, cleared cached image for ${view.file.path}`);
     }
     await this.addPexelsBanner(contentEl, {
       frontmatter,
@@ -266,49 +270,83 @@ module.exports = class PexelsBannerPlugin extends Plugin {
       customYPositionField,
       customContentStartField: this.settings.customContentStartField,
       bannerImage,
-      isReadingView: view.getMode() === "preview"
+      isReadingView: view.getMode && view.getMode() === "preview"
     });
     this.lastYPositions.set(view.file.path, yPosition);
+    const embeddedNotes = contentEl.querySelectorAll(".internal-embed");
+    console.log(`Found ${embeddedNotes.length} embedded notes`);
+    for (const embed of embeddedNotes) {
+      const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute("src"), "");
+      if (embedFile) {
+        console.log(`Processing embedded note: ${embedFile.path}`);
+        const embedView = {
+          file: embedFile,
+          contentEl: embed,
+          getMode: () => "preview"
+        };
+        await this.updateBanner(embedView, false);
+      }
+    }
   }
   async addPexelsBanner(el, ctx) {
-    var _a, _b, _c;
+    var _a, _b;
     const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
     const viewContent = el;
-    if (!viewContent.classList.contains("view-content")) {
-      console.log(`not the right element: ${(_a = el.classList) == null ? void 0 : _a.toString()}`);
+    console.log(`Adding Pexels banner for file: ${file.path}`);
+    console.log(`Banner image: ${bannerImage}`);
+    console.log(`Is reading view: ${isReadingView}`);
+    const isEmbedded = viewContent.classList.contains("internal-embed");
+    if (!isEmbedded && !viewContent.classList.contains("view-content")) {
+      console.log(`Not the right element: ${(_a = el.classList) == null ? void 0 : _a.toString()}`);
       return;
     }
     viewContent.classList.toggle("pexels-banner", !!bannerImage);
-    let container = isReadingView ? viewContent.querySelector(".markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)") : viewContent.querySelector(".cm-sizer");
+    let container;
+    if (isEmbedded) {
+      container = viewContent.querySelector(".markdown-embed-content");
+    } else {
+      container = isReadingView ? viewContent.querySelector(".markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)") : viewContent.querySelector(".cm-sizer");
+    }
     if (!container) {
-      console.log(`no container`);
+      console.log(`No container found for ${file.path}`);
       return;
     } else {
-      console.log(`container: ${(_b = container.classList) == null ? void 0 : _b.toString()}`);
+      console.log(`Container found: ${(_b = container.classList) == null ? void 0 : _b.toString()}`);
     }
     let bannerDiv = container.querySelector(":scope > .pexels-banner-image");
     if (!bannerDiv) {
+      console.log(`Creating new banner div for ${file.path}`);
       bannerDiv = createDiv({ cls: "pexels-banner-image" });
       container.insertBefore(bannerDiv, container.firstChild);
     } else {
-      console.log(`bannerDiv already exists. Parent: ${(_c = bannerDiv.parentElement.classList) == null ? void 0 : _c.toString()}`);
+      console.log(`Banner div already exists for ${file.path}`);
     }
     if (bannerImage) {
       let imageUrl = this.loadedImages.get(file.path);
       const lastInput = this.lastKeywords.get(file.path);
-      if (!imageUrl || isContentChange && input !== lastInput) {
+      console.log(`Cached image URL: ${imageUrl}`);
+      console.log(`Last input: ${lastInput}`);
+      if (!imageUrl || isContentChange && bannerImage !== lastInput) {
+        console.log(`Fetching new image URL for ${file.path}`);
         imageUrl = await this.getImageUrl(this.getInputType(bannerImage), bannerImage);
         if (imageUrl) {
+          console.log(`New image URL fetched: ${imageUrl}`);
           this.loadedImages.set(file.path, imageUrl);
           this.lastKeywords.set(file.path, bannerImage);
+        } else {
+          console.log(`Failed to fetch image URL for ${file.path}`);
         }
       }
       if (imageUrl) {
+        console.log(`Setting background image for ${file.path}`);
         bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
         bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
         bannerDiv.style.display = "block";
+      } else {
+        console.log(`No image URL available for ${file.path}`);
       }
     } else {
+      console.log(`No banner image specified for ${file.path}, hiding banner div`);
       bannerDiv.style.display = "none";
       this.loadedImages.delete(file.path);
       this.lastKeywords.delete(file.path);
@@ -386,17 +424,17 @@ module.exports = class PexelsBannerPlugin extends Plugin {
       }
     }
   }
-  async getImageUrl(inputType, input2) {
+  async getImageUrl(inputType, input) {
     switch (inputType) {
       case "url":
-        return input2;
+        return input;
       case "vaultPath":
-        return await this.getVaultImageUrl(input2);
+        return await this.getVaultImageUrl(input);
       case "obsidianLink":
-        const resolvedFile = this.getPathFromObsidianLink(input2);
+        const resolvedFile = this.getPathFromObsidianLink(input);
         return resolvedFile ? await this.getVaultImageUrl(resolvedFile.path) : null;
       case "keyword":
-        return await this.fetchPexelsImage(input2);
+        return await this.fetchPexelsImage(input);
       default:
         return null;
     }
@@ -459,19 +497,19 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     console.error("No images found for any keywords, including the random default.");
     return null;
   }
-  getInputType(input2) {
-    if (typeof input2 !== "string") {
+  getInputType(input) {
+    if (typeof input !== "string") {
       return "invalid";
     }
-    input2 = input2.trim().replace(/^["'](.*)["']$/, "$1");
-    if (input2.includes("[[") && input2.includes("]]")) {
+    input = input.trim().replace(/^["'](.*)["']$/, "$1");
+    if (input.includes("[[") && input.includes("]]")) {
       return "obsidianLink";
     }
     try {
-      new URL(input2);
+      new URL(input);
       return "url";
     } catch (_) {
-      const file = this.app.vault.getAbstractFileByPath(input2);
+      const file = this.app.vault.getAbstractFileByPath(input);
       if (file && "extension" in file) {
         if (file.extension.match(/^(jpg|jpeg|png|gif|bmp|svg)$/i)) {
           return "vaultPath";

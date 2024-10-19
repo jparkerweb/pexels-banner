@@ -260,6 +260,8 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             return;
         }
 
+        console.log(`Updating banner for file: ${view.file.path}`);
+
         const frontmatter = this.app.metadataCache.getFileCache(view.file)?.frontmatter;
         const contentEl = view.contentEl;
         const customBannerField = this.settings.customBannerField;
@@ -269,17 +271,21 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         let yPosition = customYPosition !== undefined ? customYPosition : this.settings.yPosition;
         let bannerImage = frontmatter && frontmatter[customBannerField];
 
+        console.log(`Banner image from frontmatter: ${bannerImage}`);
+
         if (!bannerImage) {
             const folderSpecific = this.getFolderSpecificImage(view.file.path);
             if (folderSpecific) {
                 bannerImage = folderSpecific.image;
                 yPosition = customYPosition !== undefined ? customYPosition : folderSpecific.yPosition;
+                console.log(`Using folder-specific banner: ${bannerImage}`);
             }
         }
         
         if (isContentChange) {
             this.loadedImages.delete(view.file.path);
             this.lastKeywords.delete(view.file.path);
+            console.log(`Content changed, cleared cached image for ${view.file.path}`);
         }
         
         await this.addPexelsBanner(contentEl, { 
@@ -291,61 +297,100 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             customYPositionField,
             customContentStartField: this.settings.customContentStartField,
             bannerImage,
-            isReadingView: view.getMode() === 'preview'
+            isReadingView: view.getMode && view.getMode() === 'preview'
         });
 
         this.lastYPositions.set(view.file.path, yPosition);
+
+        // Process embedded notes
+        const embeddedNotes = contentEl.querySelectorAll('.internal-embed');
+        console.log(`Found ${embeddedNotes.length} embedded notes`);
+        for (const embed of embeddedNotes) {
+            const embedFile = this.app.metadataCache.getFirstLinkpathDest(embed.getAttribute('src'), '');
+            if (embedFile) {
+                console.log(`Processing embedded note: ${embedFile.path}`);
+                const embedView = {
+                    file: embedFile,
+                    contentEl: embed,
+                    getMode: () => 'preview'
+                };
+                await this.updateBanner(embedView, false);
+            }
+        }
     }
 
     async addPexelsBanner(el, ctx) {
         const { frontmatter, file, isContentChange, yPosition, bannerImage, isReadingView } = ctx;
         const viewContent = el;
 
-        if (!viewContent.classList.contains('view-content')) {
-            console.log(`not the right element: ${el.classList?.toString()}`);
+        console.log(`Adding Pexels banner for file: ${file.path}`);
+        console.log(`Banner image: ${bannerImage}`);
+        console.log(`Is reading view: ${isReadingView}`);
+
+        // Check if this is an embedded note
+        const isEmbedded = viewContent.classList.contains('internal-embed');
+
+        if (!isEmbedded && !viewContent.classList.contains('view-content')) {
+            console.log(`Not the right element: ${el.classList?.toString()}`);
             return;
         }
 
         viewContent.classList.toggle('pexels-banner', !!bannerImage);
 
-        let container = isReadingView 
-            ? viewContent.querySelector('.markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)')
-            : viewContent.querySelector('.cm-sizer');
+        let container;
+        if (isEmbedded) {
+            container = viewContent.querySelector('.markdown-embed-content');
+        } else {
+            container = isReadingView 
+                ? viewContent.querySelector('.markdown-preview-sizer:not(.internal-embed .markdown-preview-sizer)')
+                : viewContent.querySelector('.cm-sizer');
+        }
 
         if (!container) {
-            console.log(`no container`);
+            console.log(`No container found for ${file.path}`);
             return;
         } else {
-            console.log(`container: ${container.classList?.toString()}`);
+            console.log(`Container found: ${container.classList?.toString()}`);
         }
 
         let bannerDiv = container.querySelector(':scope > .pexels-banner-image');
         if (!bannerDiv) {
+            console.log(`Creating new banner div for ${file.path}`);
             bannerDiv = createDiv({ cls: 'pexels-banner-image' });
             container.insertBefore(bannerDiv, container.firstChild);
         } else {
-            console.log(`bannerDiv already exists. Parent: ${bannerDiv.parentElement.classList?.toString()}`);
-            // return;
+            console.log(`Banner div already exists for ${file.path}`);
         }
 
         if (bannerImage) {
             let imageUrl = this.loadedImages.get(file.path);
             const lastInput = this.lastKeywords.get(file.path);
 
-            if (!imageUrl || (isContentChange && input !== lastInput)) {
+            console.log(`Cached image URL: ${imageUrl}`);
+            console.log(`Last input: ${lastInput}`);
+
+            if (!imageUrl || (isContentChange && bannerImage !== lastInput)) {
+                console.log(`Fetching new image URL for ${file.path}`);
                 imageUrl = await this.getImageUrl(this.getInputType(bannerImage), bannerImage);
                 if (imageUrl) {
+                    console.log(`New image URL fetched: ${imageUrl}`);
                     this.loadedImages.set(file.path, imageUrl);
                     this.lastKeywords.set(file.path, bannerImage);
+                } else {
+                    console.log(`Failed to fetch image URL for ${file.path}`);
                 }
             }
 
             if (imageUrl) {
+                console.log(`Setting background image for ${file.path}`);
                 bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
                 bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
                 bannerDiv.style.display = 'block';
+            } else {
+                console.log(`No image URL available for ${file.path}`);
             }
         } else {
+            console.log(`No banner image specified for ${file.path}, hiding banner div`);
             bannerDiv.style.display = 'none';
             this.loadedImages.delete(file.path);
             this.lastKeywords.delete(file.path);
