@@ -12,7 +12,9 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 - Customize image size and orientation
 - Set default keywords for when no specific keyword is provided
 - Adjust vertical position of the banner image globally, per folder, or per note
-- Customize frontmatter field names for banner and Y-position
+- Customize frontmatter field names
+- Set a custom start position for the content below the banner image
+- Set the banner image display to cover or contain and adjust wrapping
 - Seamless integration with Obsidian's interface
 
 ## Installation
@@ -55,8 +57,23 @@ banner: [[path/to/internal/image.jpg]]
 
 ---
 banner: nature
-pexels-banner-y-position: 30
-content-start-position: 90
+banner-y: 30
+content-start: 90
+---
+
+# Specify a custom field name for the banner and y-position:
+
+---
+my-banner: sunset
+my-y-pos: 60
+---
+
+# Specify a custom display mode (cover or contain) and repeat (true or false):
+
+---
+banner: ocean
+banner-display: cover
+banner-repeat: true
 ---
 ```
 
@@ -118,13 +135,23 @@ For example, to set a custom start position in your frontmatter:
 ```yaml
 ---
 banner: nature
-content-start: 100
+content-start: 200
 ---
 ```
 
 ## Example Note Screenshot
 
 ![example](example.jpg)
+
+## Settings Screenshot
+
+![settings-1](img/settings-1.jpg)
+
+![settings-2](img/settings-2.jpg)
+
+![settings-3](img/settings-3.jpg)
+
+![settings-4](img/settings-4.jpg)
 
 ## Feedback and Support
 
