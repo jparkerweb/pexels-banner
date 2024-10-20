@@ -24,6 +24,9 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 3. Click on Browse and search for "Pexels Banner"
 4. Install the plugin and enable it
 
+### Manual Installation
+- Unzip the [latest release](https://github.com/jparkerweb/pexels-banner/releases/latest) into your `<vault>/.obsidian/plugins/` folder.
+
 ## Usage
 
 1. Obtain a free API key from [Pexels](https://www.pexels.com/api/)
