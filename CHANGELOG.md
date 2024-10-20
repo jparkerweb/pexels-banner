@@ -2,6 +2,13 @@
 
 All notable changes to the Pexels Banner plugin will be documented in this file.
 
+## [1.5.0] - 2024-10-19
+
+### Added
+- Add Banner Image Display options: cover, contain, and auto
+  - Allow Image Repeat when "contain" is selected
+- Updated settings interface
+
 ## [1.4.1] - 2024-10-19
 
 ### Bug Fixes
