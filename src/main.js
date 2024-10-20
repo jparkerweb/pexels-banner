@@ -45,6 +45,13 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         if (!Array.isArray(this.settings.folderImages)) {
             this.settings.folderImages = [];
         }
+
+        if (this.settings.folderImages) {
+            this.settings.folderImages.forEach(folderImage => {
+                folderImage.imageDisplay = folderImage.imageDisplay || 'cover';
+                folderImage.imageRepeat = folderImage.imageRepeat || false;
+            });
+        }
     }
 
     async saveSettings() {
@@ -207,6 +214,21 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             if (imageUrl) {
                 bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
                 bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
+                bannerDiv.style.backgroundSize = frontmatter[this.settings.customImageDisplayField] || 
+                    this.getFolderSpecificSetting(file.path, 'imageDisplay') || 
+                    this.settings.imageDisplay || 
+                    'cover';
+                
+                if (bannerDiv.style.backgroundSize === 'contain') {
+                    bannerDiv.style.backgroundRepeat = (frontmatter[this.settings.customImageRepeatField] !== undefined ? 
+                        frontmatter[this.settings.customImageRepeatField] : 
+                        this.getFolderSpecificSetting(file.path, 'imageRepeat') !== undefined ?
+                        this.getFolderSpecificSetting(file.path, 'imageRepeat') :
+                        this.settings.imageRepeat) ? 'repeat' : 'no-repeat';
+                } else {
+                    bannerDiv.style.backgroundRepeat = 'no-repeat';
+                }
+                
                 bannerDiv.style.display = 'block';
             }
         } else {
@@ -434,9 +456,12 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                 file: ctx.sourcePath,
                 isContentChange: false,
                 yPosition: frontmatter[this.settings.customYPositionField] || this.settings.yPosition,
+                contentStartPosition: frontmatter[this.settings.customContentStartField] || this.settings.contentStartPosition,
                 customBannerField: this.settings.customBannerField,
                 customYPositionField: this.settings.customYPositionField,
                 customContentStartField: this.settings.customContentStartField,
+                customImageDisplayField: this.settings.customImageDisplayField,
+                customImageRepeatField: this.settings.customImageRepeatField,
                 bannerImage: frontmatter[this.settings.customBannerField]
             });
         }
@@ -450,5 +475,15 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
     applyContentStartPosition(el, contentStartPosition) {
         el.style.setProperty('--pexels-banner-content-start', `${contentStartPosition}px`);
+    }
+
+    getFolderSpecificSetting(filePath, settingName) {
+        const folderPath = this.getFolderPath(filePath);
+        for (const folderImage of this.settings.folderImages) {
+            if (folderPath.startsWith(folderImage.folder)) {
+                return folderImage[settingName];
+            }
+        }
+        return undefined;
     }
 }

@@ -12,6 +12,10 @@ const DEFAULT_SETTINGS = {
     folderImages: [],
     contentStartPosition: 150,
     customContentStartField: 'content-start',
+    imageDisplay: 'cover',
+    imageRepeat: false,
+    customImageDisplayField: 'banner-display',
+    customImageRepeatField: 'banner-repeat',
 };
 
 class FolderSuggestModal extends FuzzySuggestModal {
@@ -52,7 +56,8 @@ class FolderImageSetting extends Setting {
         infoEl.createDiv("setting-item-description");
 
         this.addFolderInput();
-        this.addImageInput();        
+        this.addImageInput();
+        this.addImageDisplaySettings();
         this.addPositions();
     }
 
@@ -98,6 +103,39 @@ class FolderImageSetting extends Setting {
             });
     }
 
+    addImageDisplaySettings(containerEl) {
+        const displayContainer = this.settingEl.createDiv('display-and-repeat-container');
+        
+        const displaySetting = new Setting(displayContainer)
+            .setName("image display")
+            .addDropdown(dropdown => {
+                dropdown
+                    .addOption('auto', 'Auto')
+                    .addOption('cover', 'Cover')
+                    .addOption('contain', 'Contain')
+                    .setValue(this.folderImage.imageDisplay || 'cover')
+                    .onChange(async (value) => {
+                        this.folderImage.imageDisplay = value;
+                        await this.plugin.saveSettings();
+                    });
+                dropdown.selectEl.style.marginRight = '20px';
+            });
+
+        const repeatSetting = new Setting(displayContainer)
+            .setName("repeat")
+            .addToggle(toggle => {
+                toggle
+                    .setValue(this.folderImage.imageRepeat || false)
+                    .onChange(async (value) => {
+                        this.folderImage.imageRepeat = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        const toggleEl = repeatSetting.controlEl.querySelector('.checkbox-container');
+        if (toggleEl) toggleEl.style.justifyContent = 'flex-start';
+    }
+
     addPositions() {
         const controlEl = this.settingEl.createDiv("setting-item-control");
         this.addYPositionInput(controlEl);
@@ -107,7 +145,6 @@ class FolderImageSetting extends Setting {
 
     addYPositionInput(containerEl) {
         const label = containerEl.createEl('label', { text: 'y-position' });
-        label.style.fontSize = '12px';
         const slider = containerEl.createEl('input', {
             type: 'range',
             cls: 'slider',
@@ -128,8 +165,7 @@ class FolderImageSetting extends Setting {
 
     addContentStartInput(containerEl) {
         const label = containerEl.createEl('label', { text: 'content start position' });
-        label.style.fontSize = '12px';
-        label.style.marginLeft = '25px';
+        label.style.marginLeft = '18px';
 
         const contentStartInput = containerEl.createEl('input', {
             type: 'number',
@@ -150,7 +186,9 @@ class FolderImageSetting extends Setting {
 
     addDeleteButton(containerEl) {
         const deleteButton = containerEl.createEl('button');
-        deleteButton.style.marginLeft = '20px';
+        deleteButton.style.marginLeft = '50px';
+        deleteButton.style.width = '50px';
+        deleteButton.style.border = '1px solid #80000030';
         deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
         deleteButton.addEventListener('click', async () => {
             this.plugin.settings.folderImages.splice(this.index, 1);
@@ -183,18 +221,22 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
 
         // Create tabs
-        const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['API', 'General', 'Folders', 'Examples']);
+        const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['Pexels API', 'General', 'Custom Field Names', 'Folder Images', 'Examples']);
 
-        // API tab content
-        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'API'}});
+        // Pexels API tab content
+        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Pexels API'}});
         this.createAPISettings(apiTab);
 
         // General tab content
         const generalTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'General'}});
         this.createGeneralSettings(generalTab);
 
-        // Folders tab content
-        const foldersTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Folders'}});
+        // Custom Fields tab content
+        const customFieldsTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Custom Field Names'}});
+        this.createCustomFieldsSettings(customFieldsTab);
+
+        // Folder Images tab content
+        const foldersTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Folder Images'}});
         this.createFolderSettings(foldersTab);
 
         // Examples tab content
@@ -226,17 +268,36 @@ class PexelsBannerSettingTab extends PluginSettingTab {
     }
 
     createAPISettings(containerEl) {
-        new Setting(containerEl)
-            .setName('API key')
+        // Add this callout at the beginning of the method
+        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
+        calloutEl.createEl('p', {text: 'Note: This section is only needed if you plan on using Pexels to fetch images. You can use direct URLs or local images without an API key. See the Examples tab for more information on how to use different image sources.'});
+        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
+        calloutEl.style.border = '1px solid var(--background-modifier-border)';
+        calloutEl.style.color = 'var(--text-accent)';
+        calloutEl.style.fontSize = '0.9em';
+        calloutEl.style.borderRadius = '5px';
+        calloutEl.style.padding = '0 25px';
+        calloutEl.style.marginBottom = '20px';
+
+        // Existing code for API settings
+        const apiKeySetting = new Setting(containerEl)
+            .setName('Pexels API key')
             .setDesc('Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It\'s not needed for using direct URLs or local images.')
-            .addText(text => text
-                .setPlaceholder('Enter your API key')
-                .setValue(this.plugin.settings.apiKey)
-                .onChange(async (value) => {
-                    this.plugin.settings.apiKey = value;
-                    await this.plugin.saveSettings();
-                })
-            );
+            .addText(text => {
+                text
+                    .setPlaceholder('Enter your API key')
+                    .setValue(this.plugin.settings.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.apiKey = value;
+                        await this.plugin.saveSettings();
+                    });
+                text.inputEl.style.marginTop = '15px';
+                text.inputEl.style.width = '100%';
+            });
+
+        apiKeySetting.settingEl.dataset.id = 'apiKey';
+        apiKeySetting.settingEl.style.display = 'flex';
+        apiKeySetting.settingEl.style.flexDirection = 'column';
 
         new Setting(containerEl)
             .setName('Images')
@@ -315,7 +376,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 })
             );
 
-        defaultKeywordsSetting.settingEl.dataset.id = 'defaultKeywords'; // Add this line
+        defaultKeywordsSetting.settingEl.dataset.id = 'defaultKeywords';
         defaultKeywordsSetting.settingEl.style.display = 'flex';
         defaultKeywordsSetting.settingEl.style.flexDirection = 'column';
     }
@@ -357,9 +418,42 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Custom Field Names')
-            .setDesc('Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.')
-            .setHeading();
+            .setName('Image Display')
+            .setDesc('Set how the banner image should be displayed')
+            .addDropdown(dropdown => dropdown
+                .addOption('auto', 'Auto')
+                .addOption('cover', 'Cover')
+                .addOption('contain', 'Contain')
+                .setValue(this.plugin.settings.imageDisplay || 'cover')
+                .onChange(async (value) => {
+                    this.plugin.settings.imageDisplay = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                }));
+
+        new Setting(containerEl)
+            .setName('Image Repeat')
+            .setDesc('Enable image repetition when "Contain" is selected')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.imageRepeat || false)
+                .onChange(async (value) => {
+                    this.plugin.settings.imageRepeat = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                }));
+    }
+
+    createCustomFieldsSettings(containerEl) {
+        // Add this callout at the beginning of the method
+        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
+        calloutEl.createEl('p', {text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.'});
+        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
+        calloutEl.style.border = '1px solid var(--background-modifier-border)';
+        calloutEl.style.color = 'var(--text-accent)';
+        calloutEl.style.fontSize = '0.9em';
+        calloutEl.style.borderRadius = '5px';
+        calloutEl.style.padding = '0 25px';
+        calloutEl.style.marginBottom = '20px';
 
         new Setting(containerEl)
             .setName('Banner Field Name')
@@ -441,13 +535,77 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.display();
                 }));
+
+        new Setting(containerEl)
+            .setName('Image Display Field Name')
+            .setDesc('Set a custom field name for the image display in frontmatter')
+            .addText(text => {
+                text
+                    .setPlaceholder('banner-display')
+                    .setValue(this.plugin.settings.customImageDisplayField)
+                    .onChange(async (value) => {
+                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
+                            this.validateFieldName(value, this.plugin.settings.customYPositionField) &&
+                            this.validateFieldName(value, this.plugin.settings.customContentStartField) &&
+                            this.validateFieldName(value, this.plugin.settings.customImageRepeatField)) {
+                            this.plugin.settings.customImageDisplayField = value;
+                            await this.plugin.saveSettings();
+                        } else {
+                            text.setValue(this.plugin.settings.customImageDisplayField);
+                        }
+                    });
+                text.inputEl.style.width = '220px';
+            })
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.customImageDisplayField = DEFAULT_SETTINGS.customImageDisplayField;
+                    await this.plugin.saveSettings();
+                    this.display();
+                }));
+
+        new Setting(containerEl)
+            .setName('Image Repeat Field Name')
+            .setDesc('Set a custom field name for the image repeat in frontmatter')
+            .addText(text => {
+                text
+                    .setPlaceholder('banner-repeat')
+                    .setValue(this.plugin.settings.customImageRepeatField)
+                    .onChange(async (value) => {
+                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
+                            this.validateFieldName(value, this.plugin.settings.customYPositionField) &&
+                            this.validateFieldName(value, this.plugin.settings.customContentStartField) &&
+                            this.validateFieldName(value, this.plugin.settings.customImageDisplayField)) {
+                            this.plugin.settings.customImageRepeatField = value;
+                            await this.plugin.saveSettings();
+                        } else {
+                            text.setValue(this.plugin.settings.customImageRepeatField);
+                        }
+                    });
+                text.inputEl.style.width = '220px';
+            })
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.customImageRepeatField = DEFAULT_SETTINGS.customImageRepeatField;
+                    await this.plugin.saveSettings();
+                    this.display();
+                }));
     }
 
     createFolderSettings(containerEl) {
-        new Setting(containerEl)
-            .setName('Folder Images')
-            .setDesc('Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.')
-            .setHeading();
+        // Add this callout at the beginning of the method
+        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
+        calloutEl.createEl('p', {text: 'Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.'});
+        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
+        calloutEl.style.border = '1px solid var(--background-modifier-border)';
+        calloutEl.style.color = 'var(--text-accent)';
+        calloutEl.style.fontSize = '0.9em';
+        calloutEl.style.borderRadius = '5px';
+        calloutEl.style.padding = '0 25px';
+        calloutEl.style.marginBottom = '20px';
 
         const folderImagesContainer = containerEl.createDiv('folder-images-container');
 
@@ -477,36 +635,44 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .setHeading();
 
         const instructionsEl = containerEl.createEl('div', {cls: 'pexels-banner-section'});
-        instructionsEl.createEl('p', {text: 'Add a "banner" field to your note\'s frontmatter with keywords for the image you want, or a direct URL to an image. You can also specify a custom y-position for the image.'});
+        instructionsEl.createEl('p', {text: 'Add the following fields to your note\'s frontmatter to customize the banner:'});
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', {text: 
 `---
-banner: blue turtle
-banner-y: 30
-content-start: 200
+${this.plugin.settings.customBannerField}: blue turtle
+${this.plugin.settings.customYPositionField}: 30
+${this.plugin.settings.customContentStartField}: 200
+${this.plugin.settings.customImageDisplayField}: contain
+${this.plugin.settings.customImageRepeatField}: true
 ---
 
 # Or use a direct URL:
 ---
-banner: https://example.com/image.jpg
-banner-y: 70
-content-start: 180
+${this.plugin.settings.customBannerField}: https://example.com/image.jpg
+${this.plugin.settings.customYPositionField}: 70
+${this.plugin.settings.customContentStartField}: 180
+${this.plugin.settings.customImageDisplayField}: cover
 ---
 
 # Or use a path to an image in the vault:
 ---
-banner: Assets/my-image.png
-banner-y: 0
-content-start: 100
+${this.plugin.settings.customBannerField}: Assets/my-image.png
+${this.plugin.settings.customYPositionField}: 0
+${this.plugin.settings.customContentStartField}: 100
+${this.plugin.settings.customImageDisplayField}: auto
 ---
 
 # Or use an Obsidian internal link:
 ---
-banner: [[example-image.png]]
-banner-y: 100
-content-start: 50
+${this.plugin.settings.customBannerField}: [[example-image.png]]
+${this.plugin.settings.customYPositionField}: 100
+${this.plugin.settings.customContentStartField}: 50
+${this.plugin.settings.customImageDisplayField}: contain
+${this.plugin.settings.customImageRepeatField}: false
 ---`
         });
+
+        instructionsEl.createEl('p', {text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".'});
 
         // Add example image
         containerEl.createEl('img', {

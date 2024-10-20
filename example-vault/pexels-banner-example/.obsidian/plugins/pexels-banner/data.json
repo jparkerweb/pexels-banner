@@ -9,12 +9,18 @@
   "customYPositionField": "banner-y",
   "folderImages": [
     {
-      "folder": "",
+      "folder": "embeds",
       "image": "",
-      "yPosition": 50,
-      "contentStartPosition": 150
+      "yPosition": 78,
+      "contentStartPosition": 220,
+      "imageDisplay": "contain",
+      "imageRepeat": true
     }
   ],
   "contentStartPosition": 150,
-  "customContentStartField": "content-start"
+  "customContentStartField": "content-start",
+  "imageDisplay": "cover",
+  "imageRepeat": false,
+  "customImageDisplayField": "banner-display",
+  "customImageRepeatField": "banner-repeat"
 }
