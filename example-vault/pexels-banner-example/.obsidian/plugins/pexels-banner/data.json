@@ -4,17 +4,23 @@
   "imageOrientation": "landscape",
   "numberOfImages": 10,
   "defaultKeywords": "nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns",
-  "yPosition": 50,
-  "customBannerField": "pexels-banner",
-  "customYPositionField": "pexels-banner-y-position",
+  "yPosition": 35,
+  "customBannerField": "banner",
+  "customYPositionField": "banner-y",
   "folderImages": [
     {
-      "folder": "",
+      "folder": "embeds",
       "image": "",
-      "yPosition": 50,
-      "contentStartPosition": null
+      "yPosition": 78,
+      "contentStartPosition": 220,
+      "imageDisplay": "contain",
+      "imageRepeat": true
     }
   ],
   "contentStartPosition": 150,
-  "customContentStartField": "pexels-banner-content-start"
+  "customContentStartField": "content-start",
+  "imageDisplay": "cover",
+  "imageRepeat": false,
+  "customImageDisplayField": "banner-display",
+  "customImageRepeatField": "banner-repeat"
 }

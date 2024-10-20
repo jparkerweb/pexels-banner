@@ -1,8 +1,8 @@
 ---
-pexels-banner: "[[turtle.jpg]]"
-pexels-banner-y-position: 20
+banner: "[[jp-cover4.jpg]]"
+banner-y: 30
+content-start: "200"
 ---
-
 # 🚩 Pexels-Banner Example Vault
 
 ---
@@ -14,4 +14,4 @@ pexels-banner-y-position: 20
 
 ![[📜 Embedded Note with Banner]]
 
-![[📃 Embedded Note without Banner]]
+![[📃 Embedded Note]]

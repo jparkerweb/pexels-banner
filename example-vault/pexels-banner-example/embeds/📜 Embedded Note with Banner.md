@@ -1,6 +1,6 @@
 ---
-pexels-banner: banners/combine-scripts.jpg
-pexels-banner-y-position: 23
+banner: banners/jp-cover3a.jpg
+banner-y: 22
 ---
 # Embedded Note with its own Banner
 
