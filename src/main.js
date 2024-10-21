@@ -299,35 +299,43 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         return lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : '';
     }
 
-    async getImageUrl(inputType, input) {
-        switch (inputType) {
-            case 'url':
-                return input;
-            case 'vaultPath':
-                return await this.getVaultImageUrl(input);
-            case 'obsidianLink':
-                const resolvedFile = this.getPathFromObsidianLink(input);
-                return resolvedFile ? await this.getVaultImageUrl(resolvedFile.path) : null;
-            case 'keyword':
-                return await this.fetchPexelsImage(input);
-            default:
-                return null;
+    async getImageUrl(type, input) {
+        console.log('Entering getImageUrl with type:', type, 'and input:', input);
+        if (type === 'url' || type === 'path') {
+            return input;
         }
-    }
 
-    preloadImage(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(url);
-            img.onerror = reject;
-            img.src = url;
-        });
+        if (type === 'obsidianLink') {
+            const file = this.getPathFromObsidianLink(input);
+            if (file) {
+                return this.getVaultImageUrl(file.path);
+            }
+            return null;
+        }
+
+        if (type === 'vaultPath') {
+            return this.getVaultImageUrl(input);
+        }
+
+        if (type === 'keyword') {
+            console.log('API Provider:', this.settings.apiProvider);
+            if (this.settings.apiProvider === 'pexels') {
+                console.log('Using Pexels API');
+                return this.fetchPexelsImage(input);
+            } else if (this.settings.apiProvider === 'pixabay') {
+                console.log('Using Pixabay API');
+                return this.fetchPixabayImage(input);
+            }
+        }
+
+        console.log('No matching type found, returning null');
+        return null;
     }
 
     async fetchPexelsImage(keyword) {
-        // Check cache first
-        if (this.imageCache.has(keyword)) {
-            return this.imageCache.get(keyword);
+        if (!this.settings.apiKey) {
+            new Notice('Pexels API key is not set. Please set it in the plugin settings.');
+            return null;
         }
 
         // Implement rate limiting
@@ -353,7 +361,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
                 if (response.status !== 200) {
                     console.error('Failed to fetch images:', response.status, response.text);
-                    return null;
+                    continue;
                 }
 
                 const data = response.json;
@@ -363,8 +371,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                     if (currentKeyword !== keyword) {
                         console.log(`No image found for "${keyword}". Using image for "${currentKeyword}" instead.`);
                     }
-                    const imageUrl = data.photos[randomIndex].src.original;
-                    this.imageCache.set(keyword, imageUrl);
+                    const imageUrl = data.photos[randomIndex].src[this.settings.imageSize];
                     try {
                         await this.preloadImage(imageUrl);
                     } catch (error) {
@@ -382,6 +389,114 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
         console.error('No images found for any keywords, including the random default.');
         return null;
+    }
+
+    async fetchPixabayImage(keyword) {
+        console.log('Entering fetchPixabayImage with keyword:', keyword);
+        if (!this.settings.apiKey) {
+            console.error('Pixabay API key is not set');
+            new Notice('Pixabay API key is not set. Please set it in the plugin settings.');
+            return null;
+        }
+
+        const defaultKeywords = this.settings.defaultKeywords.split(',').map(k => k.trim());
+        const keywordsToTry = [keyword, ...defaultKeywords];
+        const maxAttempts = 5;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const currentKeyword = attempt === 0 ? keyword : keywordsToTry[Math.floor(Math.random() * keywordsToTry.length)];
+            console.log(`Attempt ${attempt + 1} with keyword: ${currentKeyword}`);
+
+            const apiUrl = 'https://pixabay.com/api/';
+            const params = new URLSearchParams({
+                key: this.settings.apiKey,
+                q: encodeURIComponent(currentKeyword),
+                image_type: 'photo',
+                per_page: this.settings.numberOfImages,
+                safesearch: true,
+            });
+
+            console.log('Pixabay API URL:', `${apiUrl}?${params}`);
+
+            try {
+                console.log('Calling makeRequest');
+                const response = await this.makeRequest(`${apiUrl}?${params}`);
+                console.log('Response received:', response);
+                
+                if (response.status !== 200) {
+                    console.error(`Pixabay API error: ${response.status} ${response.statusText}`);
+                    continue;
+                }
+
+                let data;
+                if (response.arrayBuffer) {
+                    console.log('Response contains arrayBuffer');
+                    const text = new TextDecoder().decode(response.arrayBuffer);
+                    console.log('Decoded text:', text);
+                    try {
+                        data = JSON.parse(text);
+                    } catch (error) {
+                        console.error('Failed to parse Pixabay response:', error);
+                        continue;
+                    }
+                } else {
+                    console.error('Unexpected response format:', response);
+                    continue;
+                }
+
+                console.log('Parsed data:', data);
+
+                if (data.hits && data.hits.length > 0) {
+                    const imageUrls = data.hits.map(hit => hit.largeImageURL);
+                    console.log(`Retrieved ${imageUrls.length} image URLs`);
+                    
+                    if (imageUrls.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * imageUrls.length);
+                        const selectedImageUrl = imageUrls[randomIndex];
+                        console.log('Selected image URL:', selectedImageUrl);
+                        return selectedImageUrl;
+                    }
+                }
+                
+                console.log(`No images found for keyword: ${currentKeyword}`);
+            } catch (error) {
+                console.error('Error fetching image from Pixabay:', error);
+            }
+        }
+
+        console.error('No images found after all attempts');
+        new Notice('Failed to fetch an image after multiple attempts');
+        return null;
+    }
+
+    async makeRequest(url) {
+        console.log('Entering makeRequest with URL:', url);
+        // Implement rate limiting
+        const now = Date.now();
+        if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
+            console.log('Rate limiting in effect, waiting...');
+            await new Promise(resolve => setTimeout(resolve, this.rateLimiter.minInterval));
+        }
+        this.rateLimiter.lastRequestTime = Date.now();
+
+        try {
+            console.log('Sending request');
+            const response = await requestUrl({ url });
+            console.log('Response received:', response);
+            return response;
+        } catch (error) {
+            console.error('Request failed:', error);
+            throw new Error(`Request failed: ${error.message}`);
+        }
+    }
+
+    preloadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(url);
+            img.onerror = reject;
+            img.src = url;
+        });
     }
 
     getInputType(input) {

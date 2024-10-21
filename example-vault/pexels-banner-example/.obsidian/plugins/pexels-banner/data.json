@@ -1,5 +1,6 @@
 {
-  "apiKey": "",
+  "apiProvider": "pexels",
+  "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq",
   "imageSize": "medium",
   "imageOrientation": "landscape",
   "numberOfImages": 10,

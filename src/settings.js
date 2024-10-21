@@ -1,6 +1,7 @@
 import { PluginSettingTab, Setting, FuzzySuggestModal } from 'obsidian';
 
 const DEFAULT_SETTINGS = {
+    apiProvider: 'pexels', // Add this line
     apiKey: '',
     imageSize: 'medium',
     imageOrientation: 'landscape',
@@ -221,10 +222,10 @@ class PexelsBannerSettingTab extends PluginSettingTab {
         const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
 
         // Create tabs
-        const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['Pexels API', 'General', 'Custom Field Names', 'Folder Images', 'Examples']);
+        const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['API Settings', 'General', 'Custom Field Names', 'Folder Images', 'Examples']);
 
-        // Pexels API tab content
-        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Pexels API'}});
+        // API Settings tab content
+        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'API Settings'}});
         this.createAPISettings(apiTab);
 
         // General tab content
@@ -268,21 +269,24 @@ class PexelsBannerSettingTab extends PluginSettingTab {
     }
 
     createAPISettings(containerEl) {
-        // Add this callout at the beginning of the method
-        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
-        calloutEl.createEl('p', {text: 'Note: This section is only needed if you plan on using Pexels to fetch images. You can use direct URLs or local images without an API key. See the Examples tab for more information on how to use different image sources.'});
-        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
-        calloutEl.style.border = '1px solid var(--background-modifier-border)';
-        calloutEl.style.color = 'var(--text-accent)';
-        calloutEl.style.fontSize = '0.9em';
-        calloutEl.style.borderRadius = '5px';
-        calloutEl.style.padding = '0 25px';
-        calloutEl.style.marginBottom = '20px';
+        // Add API provider dropdown
+        new Setting(containerEl)
+            .setName('API Provider')
+            .setDesc('Choose the API provider for fetching images')
+            .addDropdown(dropdown => dropdown
+                .addOption('pexels', 'Pexels')
+                .addOption('pixabay', 'Pixabay')
+                .setValue(this.plugin.settings.apiProvider)
+                .onChange(async (value) => {
+                    this.plugin.settings.apiProvider = value;
+                    await this.plugin.saveSettings();
+                    this.display(); // Refresh the settings tab to update API key label
+                }));
 
-        // Existing code for API settings
+        // Update API key setting
         const apiKeySetting = new Setting(containerEl)
-            .setName('Pexels API key')
-            .setDesc('Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It\'s not needed for using direct URLs or local images.')
+            .setName(`${this.plugin.settings.apiProvider === 'pexels' ? 'Pexels' : 'Pixabay'} API key`)
+            .setDesc(`Enter your ${this.plugin.settings.apiProvider === 'pexels' ? 'Pexels' : 'Pixabay'} API key. This is required to fetch images using keywords.`)
             .addText(text => {
                 text
                     .setPlaceholder('Enter your API key')

@@ -13,6 +13,8 @@ var import_obsidian2 = require("obsidian");
 // src/settings.js
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
+  apiProvider: "pexels",
+  // Add this line
   apiKey: "",
   imageSize: "medium",
   imageOrientation: "landscape",
@@ -183,8 +185,8 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     containerEl.empty();
     containerEl.addClass("pexels-banner-settings");
     const mainContent = containerEl.createEl("div", { cls: "pexels-banner-main-content" });
-    const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ["Pexels API", "General", "Custom Field Names", "Folder Images", "Examples"]);
-    const apiTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "Pexels API" } });
+    const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ["API Settings", "General", "Custom Field Names", "Folder Images", "Examples"]);
+    const apiTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "API Settings" } });
     this.createAPISettings(apiTab);
     const generalTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "General" } });
     this.createGeneralSettings(generalTab);
@@ -211,16 +213,12 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     return { tabsEl, tabContentContainer };
   }
   createAPISettings(containerEl) {
-    const calloutEl = containerEl.createEl("div", { cls: "callout" });
-    calloutEl.createEl("p", { text: "Note: This section is only needed if you plan on using Pexels to fetch images. You can use direct URLs or local images without an API key. See the Examples tab for more information on how to use different image sources." });
-    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
-    calloutEl.style.border = "1px solid var(--background-modifier-border)";
-    calloutEl.style.color = "var(--text-accent)";
-    calloutEl.style.fontSize = "0.9em";
-    calloutEl.style.borderRadius = "5px";
-    calloutEl.style.padding = "0 25px";
-    calloutEl.style.marginBottom = "20px";
-    const apiKeySetting = new import_obsidian.Setting(containerEl).setName("Pexels API key").setDesc("Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It's not needed for using direct URLs or local images.").addText((text) => {
+    new import_obsidian.Setting(containerEl).setName("API Provider").setDesc("Choose the API provider for fetching images").addDropdown((dropdown) => dropdown.addOption("pexels", "Pexels").addOption("pixabay", "Pixabay").setValue(this.plugin.settings.apiProvider).onChange(async (value) => {
+      this.plugin.settings.apiProvider = value;
+      await this.plugin.saveSettings();
+      this.display();
+    }));
+    const apiKeySetting = new import_obsidian.Setting(containerEl).setName(`${this.plugin.settings.apiProvider === "pexels" ? "Pexels" : "Pixabay"} API key`).setDesc(`Enter your ${this.plugin.settings.apiProvider === "pexels" ? "Pexels" : "Pixabay"} API key. This is required to fetch images using keywords.`).addText((text) => {
       text.setPlaceholder("Enter your API key").setValue(this.plugin.settings.apiKey).onChange(async (value) => {
         this.plugin.settings.apiKey = value;
         await this.plugin.saveSettings();
@@ -717,32 +715,38 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     const lastSlashIndex = filePath.lastIndexOf("/");
     return lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : "";
   }
-  async getImageUrl(inputType, input) {
-    switch (inputType) {
-      case "url":
-        return input;
-      case "vaultPath":
-        return await this.getVaultImageUrl(input);
-      case "obsidianLink":
-        const resolvedFile = this.getPathFromObsidianLink(input);
-        return resolvedFile ? await this.getVaultImageUrl(resolvedFile.path) : null;
-      case "keyword":
-        return await this.fetchPexelsImage(input);
-      default:
-        return null;
+  async getImageUrl(type, input) {
+    console.log("Entering getImageUrl with type:", type, "and input:", input);
+    if (type === "url" || type === "path") {
+      return input;
     }
-  }
-  preloadImage(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(url);
-      img.onerror = reject;
-      img.src = url;
-    });
+    if (type === "obsidianLink") {
+      const file = this.getPathFromObsidianLink(input);
+      if (file) {
+        return this.getVaultImageUrl(file.path);
+      }
+      return null;
+    }
+    if (type === "vaultPath") {
+      return this.getVaultImageUrl(input);
+    }
+    if (type === "keyword") {
+      console.log("API Provider:", this.settings.apiProvider);
+      if (this.settings.apiProvider === "pexels") {
+        console.log("Using Pexels API");
+        return this.fetchPexelsImage(input);
+      } else if (this.settings.apiProvider === "pixabay") {
+        console.log("Using Pixabay API");
+        return this.fetchPixabayImage(input);
+      }
+    }
+    console.log("No matching type found, returning null");
+    return null;
   }
   async fetchPexelsImage(keyword) {
-    if (this.imageCache.has(keyword)) {
-      return this.imageCache.get(keyword);
+    if (!this.settings.apiKey) {
+      new import_obsidian2.Notice("Pexels API key is not set. Please set it in the plugin settings.");
+      return null;
     }
     const now = Date.now();
     if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
@@ -763,7 +767,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
         });
         if (response.status !== 200) {
           console.error("Failed to fetch images:", response.status, response.text);
-          return null;
+          continue;
         }
         const data = response.json;
         if (data.photos && data.photos.length > 0) {
@@ -771,8 +775,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
           if (currentKeyword !== keyword) {
             console.log(`No image found for "${keyword}". Using image for "${currentKeyword}" instead.`);
           }
-          const imageUrl = data.photos[randomIndex].src.original;
-          this.imageCache.set(keyword, imageUrl);
+          const imageUrl = data.photos[randomIndex].src[this.settings.imageSize];
           try {
             await this.preloadImage(imageUrl);
           } catch (error) {
@@ -789,6 +792,97 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     }
     console.error("No images found for any keywords, including the random default.");
     return null;
+  }
+  async fetchPixabayImage(keyword) {
+    console.log("Entering fetchPixabayImage with keyword:", keyword);
+    if (!this.settings.apiKey) {
+      console.error("Pixabay API key is not set");
+      new import_obsidian2.Notice("Pixabay API key is not set. Please set it in the plugin settings.");
+      return null;
+    }
+    const defaultKeywords = this.settings.defaultKeywords.split(",").map((k) => k.trim());
+    const keywordsToTry = [keyword, ...defaultKeywords];
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const currentKeyword = attempt === 0 ? keyword : keywordsToTry[Math.floor(Math.random() * keywordsToTry.length)];
+      console.log(`Attempt ${attempt + 1} with keyword: ${currentKeyword}`);
+      const apiUrl = "https://pixabay.com/api/";
+      const params = new URLSearchParams({
+        key: this.settings.apiKey,
+        q: encodeURIComponent(currentKeyword),
+        image_type: "photo",
+        per_page: this.settings.numberOfImages,
+        safesearch: true
+      });
+      console.log("Pixabay API URL:", `${apiUrl}?${params}`);
+      try {
+        console.log("Calling makeRequest");
+        const response = await this.makeRequest(`${apiUrl}?${params}`);
+        console.log("Response received:", response);
+        if (response.status !== 200) {
+          console.error(`Pixabay API error: ${response.status} ${response.statusText}`);
+          continue;
+        }
+        let data;
+        if (response.arrayBuffer) {
+          console.log("Response contains arrayBuffer");
+          const text = new TextDecoder().decode(response.arrayBuffer);
+          console.log("Decoded text:", text);
+          try {
+            data = JSON.parse(text);
+          } catch (error) {
+            console.error("Failed to parse Pixabay response:", error);
+            continue;
+          }
+        } else {
+          console.error("Unexpected response format:", response);
+          continue;
+        }
+        console.log("Parsed data:", data);
+        if (data.hits && data.hits.length > 0) {
+          const imageUrls = data.hits.map((hit) => hit.largeImageURL);
+          console.log(`Retrieved ${imageUrls.length} image URLs`);
+          if (imageUrls.length > 0) {
+            const randomIndex = Math.floor(Math.random() * imageUrls.length);
+            const selectedImageUrl = imageUrls[randomIndex];
+            console.log("Selected image URL:", selectedImageUrl);
+            return selectedImageUrl;
+          }
+        }
+        console.log(`No images found for keyword: ${currentKeyword}`);
+      } catch (error) {
+        console.error("Error fetching image from Pixabay:", error);
+      }
+    }
+    console.error("No images found after all attempts");
+    new import_obsidian2.Notice("Failed to fetch an image after multiple attempts");
+    return null;
+  }
+  async makeRequest(url) {
+    console.log("Entering makeRequest with URL:", url);
+    const now = Date.now();
+    if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
+      console.log("Rate limiting in effect, waiting...");
+      await new Promise((resolve) => setTimeout(resolve, this.rateLimiter.minInterval));
+    }
+    this.rateLimiter.lastRequestTime = Date.now();
+    try {
+      console.log("Sending request");
+      const response = await (0, import_obsidian2.requestUrl)({ url });
+      console.log("Response received:", response);
+      return response;
+    } catch (error) {
+      console.error("Request failed:", error);
+      throw new Error(`Request failed: ${error.message}`);
+    }
+  }
+  preloadImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(url);
+      img.onerror = reject;
+      img.src = url;
+    });
   }
   getInputType(input) {
     if (typeof input !== "string") {
