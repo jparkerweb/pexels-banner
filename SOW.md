@@ -1,14 +1,14 @@
 # Statement of Work: Adding Pixabay API Option
 
 ## Objective
-Add an option for users to choose between Pexels and Pixabay APIs for fetching images in the Pexels Banner plugin.
+Add an option for users to choose between Pexels and Pixabay APIs for fetching images in the Pixel Banner plugin.
 
 ## Tasks
 
 ### 1. Update Settings
-- [x] Modify `DEFAULT_SETTINGS` in `src/settings.js` to include a new `apiProvider` field
-- [x] Update `PexelsBannerSettingTab` class to add a dropdown for API provider selection
-- [x] Ensure the API key field label changes based on the selected provider
+- [x] Modify `DEFAULT_SETTINGS` in `src/settings.js` to include new fields for `pexelsApiKey` and `pixabayApiKey`
+- [x] Update `PixelBannerSettingTab` class to add a dropdown for API provider selection
+- [x] Ensure both API keys are saved and used based on the selected provider
 
 ### 2. Update Main Plugin Logic
 - [x] Modify `src/main.js` to handle both Pexels and Pixabay API calls

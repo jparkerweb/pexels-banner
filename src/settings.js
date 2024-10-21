@@ -1,8 +1,9 @@
 import { PluginSettingTab, Setting, FuzzySuggestModal } from 'obsidian';
 
 const DEFAULT_SETTINGS = {
-    apiProvider: 'pexels', // Add this line
-    apiKey: '',
+    apiProvider: 'pexels',
+    pexelsApiKey: '',
+    pixabayApiKey: '',
     imageSize: 'medium',
     imageOrientation: 'landscape',
     numberOfImages: 10,
@@ -208,40 +209,40 @@ class FolderImageSetting extends Setting {
     }
 }
 
-class PexelsBannerSettingTab extends PluginSettingTab {
+class PixelBannerSettingTab extends PluginSettingTab {
     constructor(app, plugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
 
     display() {
-        const {containerEl} = this;
+        const { containerEl } = this;
         containerEl.empty();
-        containerEl.addClass('pexels-banner-settings');
+        containerEl.addClass('pixel-banner-settings');
 
-        const mainContent = containerEl.createEl('div', {cls: 'pexels-banner-main-content'});
+        const mainContent = containerEl.createEl('div', { cls: 'pixel-banner-main-content' });
 
         // Create tabs
         const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ['API Settings', 'General', 'Custom Field Names', 'Folder Images', 'Examples']);
 
         // API Settings tab content
-        const apiTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'API Settings'}});
+        const apiTab = tabContentContainer.createEl('div', { cls: 'tab-content', attr: { 'data-tab': 'API Settings' } });
         this.createAPISettings(apiTab);
 
         // General tab content
-        const generalTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'General'}});
+        const generalTab = tabContentContainer.createEl('div', { cls: 'tab-content', attr: { 'data-tab': 'General' } });
         this.createGeneralSettings(generalTab);
 
         // Custom Fields tab content
-        const customFieldsTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Custom Field Names'}});
+        const customFieldsTab = tabContentContainer.createEl('div', { cls: 'tab-content', attr: { 'data-tab': 'Custom Field Names' } });
         this.createCustomFieldsSettings(customFieldsTab);
 
         // Folder Images tab content
-        const foldersTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Folder Images'}});
+        const foldersTab = tabContentContainer.createEl('div', { cls: 'tab-content', attr: { 'data-tab': 'Folder Images' } });
         this.createFolderSettings(foldersTab);
 
         // Examples tab content
-        const examplesTab = tabContentContainer.createEl('div', {cls: 'tab-content', attr: {'data-tab': 'Examples'}});
+        const examplesTab = tabContentContainer.createEl('div', { cls: 'tab-content', attr: { 'data-tab': 'Examples' } });
         this.createExampleSettings(examplesTab);
 
         // Activate the first tab
@@ -249,14 +250,14 @@ class PexelsBannerSettingTab extends PluginSettingTab {
     }
 
     createTabs(containerEl, tabNames) {
-        const tabsEl = containerEl.createEl('div', {cls: 'pexels-banner-settings-tabs'});
-        const tabContentContainer = containerEl.createEl('div', {cls: 'pexels-banner-settings-tab-content-container'});
+        const tabsEl = containerEl.createEl('div', { cls: 'pixel-banner-settings-tabs' });
+        const tabContentContainer = containerEl.createEl('div', { cls: 'pixel-banner-settings-tab-content-container' });
 
         tabNames.forEach(tabName => {
-            const tabEl = tabsEl.createEl('button', {cls: 'pexels-banner-settings-tab', text: tabName});
+            const tabEl = tabsEl.createEl('button', { cls: 'pixel-banner-settings-tab', text: tabName });
             tabEl.addEventListener('click', () => {
                 // Deactivate all tabs
-                tabsEl.querySelectorAll('.pexels-banner-settings-tab').forEach(tab => tab.removeClass('active'));
+                tabsEl.querySelectorAll('.pixel-banner-settings-tab').forEach(tab => tab.removeClass('active'));
                 tabContentContainer.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
 
                 // Activate clicked tab
@@ -269,10 +270,10 @@ class PexelsBannerSettingTab extends PluginSettingTab {
     }
 
     createAPISettings(containerEl) {
-        // Add API provider dropdown
+        // Add API provider radio buttons
         new Setting(containerEl)
             .setName('API Provider')
-            .setDesc('Choose the API provider for fetching images')
+            .setDesc('Select the API provider for fetching images')
             .addDropdown(dropdown => dropdown
                 .addOption('pexels', 'Pexels')
                 .addOption('pixabay', 'Pixabay')
@@ -280,37 +281,41 @@ class PexelsBannerSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.apiProvider = value;
                     await this.plugin.saveSettings();
-                    this.display(); // Refresh the settings tab to update API key label
+                    this.display(); // Refresh the settings tab to update API key fields
                 }));
 
-        // Update API key setting
-        const apiKeySetting = new Setting(containerEl)
-            .setName(`${this.plugin.settings.apiProvider === 'pexels' ? 'Pexels' : 'Pixabay'} API key`)
-            .setDesc(`Enter your ${this.plugin.settings.apiProvider === 'pexels' ? 'Pexels' : 'Pixabay'} API key. This is required to fetch images using keywords.`)
-            .addText(text => {
-                text
-                    .setPlaceholder('Enter your API key')
-                    .setValue(this.plugin.settings.apiKey)
-                    .onChange(async (value) => {
-                        this.plugin.settings.apiKey = value;
-                        await this.plugin.saveSettings();
-                    });
-                text.inputEl.style.marginTop = '15px';
-                text.inputEl.style.width = '100%';
-            });
+        // Pexels API key
+        new Setting(containerEl)
+            .setName('Pexels API Key')
+            .setDesc('Enter your Pexels API key')
+            .addText(text => text
+                .setPlaceholder('Enter your Pexels API key')
+                .setValue(this.plugin.settings.pexelsApiKey)
+                .onChange(async (value) => {
+                    this.plugin.settings.pexelsApiKey = value;
+                    await this.plugin.saveSettings();
+                }));
 
-        apiKeySetting.settingEl.dataset.id = 'apiKey';
-        apiKeySetting.settingEl.style.display = 'flex';
-        apiKeySetting.settingEl.style.flexDirection = 'column';
+        // Pixabay API key
+        new Setting(containerEl)
+            .setName('Pixabay API Key')
+            .setDesc('Enter your Pixabay API key')
+            .addText(text => text
+                .setPlaceholder('Enter your Pixabay API key')
+                .setValue(this.plugin.settings.pixabayApiKey)
+                .onChange(async (value) => {
+                    this.plugin.settings.pixabayApiKey = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(containerEl)
             .setName('Images')
-            .setDesc('Configure settings for images fetched from Pexels. These settings apply when using keywords to fetch random images.')
+            .setDesc('Configure settings for images fetched from API. These settings apply when using keywords to fetch random images.')
             .setHeading();
 
         new Setting(containerEl)
             .setName('Size')
-            .setDesc('Select the size of the image - (Pexels API only)')
+            .setDesc('Select the size of the image - (API only)')
             .addDropdown(dropdown => dropdown
                 .addOption('small', 'Small')
                 .addOption('medium', 'Medium')
@@ -323,7 +328,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Orientation')
-            .setDesc('Select the orientation of the image - (Pexels API only)')
+            .setDesc('Select the orientation of the image - (API only)')
             .addDropdown(dropdown => dropdown
                 .addOption('landscape', 'Landscape')
                 .addOption('portrait', 'Portrait')
@@ -336,7 +341,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Number of images')
-            .setDesc('Enter the number of random images to fetch (1-50) - (Pexels API only)')
+            .setDesc('Enter the number of random images to fetch (1-50) - (API only)')
             .addText(text => text
                 .setPlaceholder('10')
                 .setValue(String(this.plugin.settings.numberOfImages || 10))
@@ -357,7 +362,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
         const defaultKeywordsSetting = new Setting(containerEl)
             .setName('Default keywords')
-            .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (Pexels API only)')
+            .setDesc('Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (API only)')
             .addTextArea(text => {
                 text
                     .setPlaceholder('Enter keywords, separated by commas')
@@ -449,8 +454,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
     createCustomFieldsSettings(containerEl) {
         // Add this callout at the beginning of the method
-        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
-        calloutEl.createEl('p', {text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.'});
+        const calloutEl = containerEl.createEl('div', { cls: 'callout' });
+        calloutEl.createEl('p', { text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.' });
         calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
         calloutEl.style.border = '1px solid var(--background-modifier-border)';
         calloutEl.style.color = 'var(--text-accent)';
@@ -464,7 +469,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .setDesc('Set a custom field name for the banner in frontmatter')
             .addText(text => {
                 text
-                    .setPlaceholder('pexels-banner')
+                    .setPlaceholder('pixel-banner')
                     .setValue(this.plugin.settings.customBannerField)
                     .onChange(async (value) => {
                         if (this.validateFieldName(value, this.plugin.settings.customYPositionField) && 
@@ -491,7 +496,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .setDesc('Set a custom field name for the Y-position in frontmatter')
             .addText(text => {
                 text
-                    .setPlaceholder('pexels-banner-y-position')
+                    .setPlaceholder('pixel-banner-y-position')
                     .setValue(this.plugin.settings.customYPositionField)
                     .onChange(async (value) => {
                         if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
@@ -518,7 +523,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .setDesc('Set a custom field name for the content start position in frontmatter')
             .addText(text => {
                 text
-                    .setPlaceholder('pexels-banner-content-start')
+                    .setPlaceholder('pixel-banner-content-start')
                     .setValue(this.plugin.settings.customContentStartField)
                     .onChange(async (value) => {
                         if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
@@ -601,8 +606,8 @@ class PexelsBannerSettingTab extends PluginSettingTab {
 
     createFolderSettings(containerEl) {
         // Add this callout at the beginning of the method
-        const calloutEl = containerEl.createEl('div', {cls: 'callout'});
-        calloutEl.createEl('p', {text: 'Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.'});
+        const calloutEl = containerEl.createEl('div', { cls: 'callout' });
+        calloutEl.createEl('p', { text: 'Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.' });
         calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
         calloutEl.style.border = '1px solid var(--background-modifier-border)';
         calloutEl.style.color = 'var(--text-accent)';
@@ -627,7 +632,7 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .addButton(button => button
                 .setButtonText("+ Add Folder Image Setting")
                 .onClick(async () => {
-                    this.plugin.settings.folderImages.push({folder: "", image: "", yPosition: 50, contentStartPosition: 150});
+                    this.plugin.settings.folderImages.push({ folder: "", image: "", yPosition: 50, contentStartPosition: 150 });
                     await this.plugin.saveSettings();
                     updateFolderSettings();
                 }));
@@ -638,10 +643,10 @@ class PexelsBannerSettingTab extends PluginSettingTab {
             .setName('How to use')
             .setHeading();
 
-        const instructionsEl = containerEl.createEl('div', {cls: 'pexels-banner-section'});
-        instructionsEl.createEl('p', {text: 'Add the following fields to your note\'s frontmatter to customize the banner:'});
+        const instructionsEl = containerEl.createEl('div', { cls: 'pixel-banner-section' });
+        instructionsEl.createEl('p', { text: 'Add the following fields to your note\'s frontmatter to customize the banner:' });
         const codeEl = instructionsEl.createEl('pre');
-        codeEl.createEl('code', {text: 
+        codeEl.createEl('code', { text: 
 `---
 ${this.plugin.settings.customBannerField}: blue turtle
 ${this.plugin.settings.customYPositionField}: 30
@@ -676,13 +681,13 @@ ${this.plugin.settings.customImageRepeatField}: false
 ---`
         });
 
-        instructionsEl.createEl('p', {text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".'});
+        instructionsEl.createEl('p', { text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".' });
 
         // Add example image
         containerEl.createEl('img', {
             attr: {
-                src: 'https://raw.githubusercontent.com/jparkerweb/pexels-banner/main/example.jpg',
-                alt: 'Example of a Pexels banner',
+                src: 'https://raw.githubusercontent.com/jparkerweb/pixel-banner/main/example.jpg',
+                alt: 'Example of a Pixel banner',
                 style: 'max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;'
             }
         });
@@ -710,4 +715,4 @@ function debounce(func, wait) {
     };
 }
 
-export { DEFAULT_SETTINGS, FolderSuggestModal, FolderImageSetting, PexelsBannerSettingTab, debounce };
+export { DEFAULT_SETTINGS, FolderSuggestModal, FolderImageSetting, PixelBannerSettingTab, debounce };

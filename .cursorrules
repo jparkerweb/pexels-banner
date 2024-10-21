@@ -32,7 +32,7 @@ always obey the patterns defined here:
 @https://docs.obsidian.md/Plugins/Guides/Understanding+deferred+views
 
 This plugin should always adhear to the following when inserting elements:
-- div.view-content should always be the only element the .pexels-banner class is applied to
+- div.view-content should always be the only element the .pixel-banner class is applied to
 - div.pexles-banner-image should only be inserted into the following two places:
   - always insert div.pexles-banner-image as the 1st child of div.cm-sizer
-  - always insert div.pexels-banner-image as the 1st child of div.markdown-preview-sizer
+  - always insert div.pixel-banner-image as the 1st child of div.markdown-preview-sizer

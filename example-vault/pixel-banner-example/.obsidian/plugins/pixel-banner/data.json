@@ -1,6 +1,7 @@
 {
-  "apiProvider": "pexels",
-  "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq",
+  "apiProvider": "pixabay",
+  "pexelsApiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq",
+  "pixabayApiKey": "19065148-e84a3647d61b9f147d3674670",
   "imageSize": "medium",
   "imageOrientation": "landscape",
   "numberOfImages": 10,
@@ -23,5 +24,6 @@
   "imageDisplay": "cover",
   "imageRepeat": false,
   "customImageDisplayField": "banner-display",
-  "customImageRepeatField": "banner-repeat"
+  "customImageRepeatField": "banner-repeat",
+  "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq"
 }

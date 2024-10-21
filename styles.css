@@ -1,4 +1,4 @@
-@keyframes pexels-banner-image--fade-in {
+@keyframes pixel-banner-image--fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
 }
@@ -6,7 +6,7 @@
 /* ------------------------------------------------------------------ */
 /* -- configure default: move banner image to top, fade/size, etc. -- */
 /* ------------------------------------------------------------------ */
-.pexels-banner-image {
+.pixel-banner-image {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -19,7 +19,7 @@
 	height: 350px;
     border-radius: 17px !important;
 	pointer-events: none;
-	animation: pexels-banner-image--fade-in 0.4s ease-in-out;
+	animation: pixel-banner-image--fade-in 0.4s ease-in-out;
 	will-change: opacity;
 	transform: translateZ(0);
 	background-repeat: no-repeat;
@@ -34,9 +34,9 @@
 /* ------------------------------------------------------------------ */
 /* -- push frontmatter container down to give room to banner image -- */
 /* ------------------------------------------------------------------ */
-.pexels-banner .cm-sizer:first-of-type,
-.pexels-banner .markdown-preview-sizer:first-of-type {
-    padding-top: var(--pexels-banner-content-start, 150px);
+.pixel-banner .cm-sizer:first-of-type,
+.pixel-banner .markdown-preview-sizer:first-of-type {
+    padding-top: var(--pixel-banner-content-start, 150px);
 }
 /* fix for embedded notes */
 .internal-embed > .markdown-embed-content .cm-sizer:first-of-type,
@@ -47,13 +47,13 @@
 /* -------------------------- */
 /* -- Settings Page Styles -- */
 /* -------------------------- */
-.pexels-banner-settings {
+.pixel-banner-settings {
     padding: 20px;
     max-width: 800px;
     margin: 50px auto 0 auto;
 }
 
-.pexels-banner-header {
+.pixel-banner-header {
     text-align: center;
     margin-bottom: 30px;
     background-color: var(--background-secondary);
@@ -62,37 +62,37 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.pexels-banner-header h2 {
+.pixel-banner-header h2 {
     margin-bottom: 10px;
     color: var(--text-accent);
 }
 
-.pexels-banner-main-content {
+.pixel-banner-main-content {
     display: flex;
     flex-direction: column;
     gap: 30px;
 }
 
-.pexels-banner-section {
+.pixel-banner-section {
     background-color: var(--background-secondary);
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.pexels-banner-section h3 {
+.pixel-banner-section h3 {
     margin-top: 0;
     margin-bottom: 15px;
     color: var(--text-accent);
     font-size: 1.2em;
 }
 
-.pexels-banner-section ol {
+.pixel-banner-section ol {
     padding-left: 20px;
     margin-bottom: 15px;
 }
 
-.pexels-banner-section pre {
+.pixel-banner-section pre {
     background-color: var(--background-primary);
     border-radius: 5px;
     padding: 10px;
@@ -100,20 +100,20 @@
     overflow-x: auto;
 }
 
-.pexels-banner-footer {
+.pixel-banner-footer {
     margin-top: 30px;
     text-align: center;
     font-style: italic;
     color: var(--text-muted);
 }
 
-.pexels-banner-settings .setting-item {
+.pixel-banner-settings .setting-item {
     border-top: none;
     padding-top: 10px;
     padding-bottom: 10px;
 }
 
-.pexels-banner-settings .setting-item-control {
+.pixel-banner-settings .setting-item-control {
     justify-content: flex-end;
 }
 
@@ -134,38 +134,38 @@
 	justify-content: flex-start;
 }
 /* setting item for api key */
-.pexels-banner-settings .setting-item[data-id="apiKey"] .setting-item-control {
+.pixel-banner-settings .setting-item[data-id="apiKey"] .setting-item-control {
     width: 100%;
 }
 /* setting item for default keywords */
-.pexels-banner-settings .setting-item[data-id="defaultKeywords"] .setting-item-control {
+.pixel-banner-settings .setting-item[data-id="defaultKeywords"] .setting-item-control {
     width: 100%;
 }
 
 
-.pexels-banner-settings input[type="text"],
-.pexels-banner-settings select {
+.pixel-banner-settings input[type="text"],
+.pixel-banner-settings select {
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 5px;
     padding: 5px 30px 5px 10px;
 }
 
-.pexels-banner-settings .dropdown {
+.pixel-banner-settings .dropdown {
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 5px;
 }
 
-.pexels-banner-settings .setting-item-description {
+.pixel-banner-settings .setting-item-description {
     color: var(--text-muted);
 }
 
-.pexels-banner-settings-tabs {
+.pixel-banner-settings-tabs {
     display: flex;
 }
 
-.pexels-banner-settings-tab {
+.pixel-banner-settings-tab {
     margin-right: 10px;
     padding: 10px 20px;
     border: none;
@@ -176,26 +176,26 @@
     transition: color 0.3s ease;
 }
 
-.pexels-banner-settings-tab:hover {
+.pixel-banner-settings-tab:hover {
     color: var(--text-normal);
 }
 
-.pexels-banner-settings-tab.active {
+.pixel-banner-settings-tab.active {
     color: var(--text-accent);
     border-bottom: 2px solid var(--text-accent);
 }
 
-.pexels-banner-settings-tab-content-container > .tab-content {
+.pixel-banner-settings-tab-content-container > .tab-content {
     display: none;
 }
 
-.pexels-banner-settings-tab-content-container > .tab-content.active {
+.pixel-banner-settings-tab-content-container > .tab-content.active {
     display: block;
 }
 
 
 /* spacing class */
-.pexels-banner-spacing {
+.pixel-banner-spacing {
     height: 20px;
 }
 

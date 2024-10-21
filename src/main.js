@@ -1,7 +1,7 @@
 import { Plugin, MarkdownView, requestUrl, Notice } from 'obsidian';
-import { DEFAULT_SETTINGS, PexelsBannerSettingTab, debounce } from './settings';
+import { DEFAULT_SETTINGS, PixelBannerSettingTab, debounce } from './settings';
 
-module.exports = class PexelsBannerPlugin extends Plugin {
+module.exports = class PixelBannerPlugin extends Plugin {
     debounceTimer = null;
     loadedImages = new Map();
     lastKeywords = new Map();
@@ -14,7 +14,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
     async onload() {
         await this.loadSettings();
-        this.addSettingTab(new PexelsBannerSettingTab(this.app, this));
+        this.addSettingTab(new PixelBannerSettingTab(this.app, this));
         
         this.registerEvent(
             this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange.bind(this))
@@ -137,7 +137,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             this.lastKeywords.delete(view.file.path);
         }
         
-        await this.addPexelsBanner(contentEl, { 
+        await this.addPixelBanner(contentEl, { 
             frontmatter, 
             file: view.file, 
             isContentChange,
@@ -167,7 +167,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
     }
 
-    async addPexelsBanner(el, ctx) {
+    async addPixelBanner(el, ctx) {
         const { frontmatter, file, isContentChange, yPosition, contentStartPosition, bannerImage, isReadingView } = ctx;
         const viewContent = el;
 
@@ -178,7 +178,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             return;
         }
 
-        viewContent.classList.toggle('pexels-banner', !!bannerImage);
+        viewContent.classList.toggle('pixel-banner', !!bannerImage);
 
         let container;
         if (isEmbedded) {
@@ -193,9 +193,9 @@ module.exports = class PexelsBannerPlugin extends Plugin {
             return;
         }
 
-        let bannerDiv = container.querySelector(':scope > .pexels-banner-image');
+        let bannerDiv = container.querySelector(':scope > .pixel-banner-image');
         if (!bannerDiv) {
-            bannerDiv = createDiv({ cls: 'pexels-banner-image' });
+            bannerDiv = createDiv({ cls: 'pixel-banner-image' });
             container.insertBefore(bannerDiv, container.firstChild);
         }
 
@@ -251,7 +251,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                     const addedNodes = Array.from(mutation.addedNodes);
 
                     const bannerRemoved = removedNodes.some(node => 
-                        node.classList && node.classList.contains('pexels-banner-image')
+                        node.classList && node.classList.contains('pixel-banner-image')
                     );
 
                     const contentChanged = addedNodes.some(node => 
@@ -300,7 +300,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     async getImageUrl(type, input) {
-        console.log('Entering getImageUrl with type:', type, 'and input:', input);
+        // console.log('Entering getImageUrl with type:', type, 'and input:', input);
         if (type === 'url' || type === 'path') {
             return input;
         }
@@ -318,22 +318,23 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
 
         if (type === 'keyword') {
-            console.log('API Provider:', this.settings.apiProvider);
+            // console.log('API Provider:', this.settings.apiProvider);
             if (this.settings.apiProvider === 'pexels') {
-                console.log('Using Pexels API');
+                // console.log('Using Pexels API');
                 return this.fetchPexelsImage(input);
             } else if (this.settings.apiProvider === 'pixabay') {
-                console.log('Using Pixabay API');
+                // console.log('Using Pixabay API');
                 return this.fetchPixabayImage(input);
             }
         }
 
-        console.log('No matching type found, returning null');
+        // console.log('No matching type found, returning null');
         return null;
     }
 
     async fetchPexelsImage(keyword) {
-        if (!this.settings.apiKey) {
+        const apiKey = this.settings.pexelsApiKey;
+        if (!apiKey) {
             new Notice('Pexels API key is not set. Please set it in the plugin settings.');
             return null;
         }
@@ -355,7 +356,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                     url: `https://api.pexels.com/v1/search?query=${encodeURIComponent(currentKeyword)}&per_page=${this.settings.numberOfImages}&size=${this.settings.imageSize}&orientation=${this.settings.imageOrientation}`,
                     method: 'GET',
                     headers: {
-                        'Authorization': this.settings.apiKey
+                        'Authorization': apiKey
                     }
                 });
 
@@ -382,7 +383,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                     console.log(`No image found for the provided keyword: "${keyword}". Trying a random default keyword.`);
                 }
             } catch (error) {
-                console.error(`Error fetching image from Pexels API for keyword "${currentKeyword}":`, error);
+                console.error(`Error fetching image from API for keyword "${currentKeyword}":`, error);
                 new Notice(`Failed to fetch image: ${error.message}`);
             }
         }
@@ -392,36 +393,36 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     async fetchPixabayImage(keyword) {
-        console.log('Entering fetchPixabayImage with keyword:', keyword);
-        if (!this.settings.apiKey) {
-            console.error('Pixabay API key is not set');
+        const apiKey = this.settings.pixabayApiKey;
+        if (!apiKey) {
             new Notice('Pixabay API key is not set. Please set it in the plugin settings.');
             return null;
         }
 
+        // console.log('Entering fetchPixabayImage with keyword:', keyword);
         const defaultKeywords = this.settings.defaultKeywords.split(',').map(k => k.trim());
         const keywordsToTry = [keyword, ...defaultKeywords];
         const maxAttempts = 5;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             const currentKeyword = attempt === 0 ? keyword : keywordsToTry[Math.floor(Math.random() * keywordsToTry.length)];
-            console.log(`Attempt ${attempt + 1} with keyword: ${currentKeyword}`);
+            // console.log(`Attempt ${attempt + 1} with keyword: ${currentKeyword}`);
 
             const apiUrl = 'https://pixabay.com/api/';
             const params = new URLSearchParams({
-                key: this.settings.apiKey,
+                key: apiKey,
                 q: encodeURIComponent(currentKeyword),
                 image_type: 'photo',
                 per_page: this.settings.numberOfImages,
                 safesearch: true,
             });
 
-            console.log('Pixabay API URL:', `${apiUrl}?${params}`);
+            // console.log('Pixabay API URL:', `${apiUrl}?${params}`);
 
             try {
-                console.log('Calling makeRequest');
+                // console.log('Calling makeRequest');
                 const response = await this.makeRequest(`${apiUrl}?${params}`);
-                console.log('Response received:', response);
+                // console.log('Response received:', response);
                 
                 if (response.status !== 200) {
                     console.error(`Pixabay API error: ${response.status} ${response.statusText}`);
@@ -430,9 +431,9 @@ module.exports = class PexelsBannerPlugin extends Plugin {
 
                 let data;
                 if (response.arrayBuffer) {
-                    console.log('Response contains arrayBuffer');
+                    // console.log('Response contains arrayBuffer');
                     const text = new TextDecoder().decode(response.arrayBuffer);
-                    console.log('Decoded text:', text);
+                    // console.log('Decoded text:', text);
                     try {
                         data = JSON.parse(text);
                     } catch (error) {
@@ -444,16 +445,16 @@ module.exports = class PexelsBannerPlugin extends Plugin {
                     continue;
                 }
 
-                console.log('Parsed data:', data);
+                // console.log('Parsed data:', data);
 
                 if (data.hits && data.hits.length > 0) {
                     const imageUrls = data.hits.map(hit => hit.largeImageURL);
-                    console.log(`Retrieved ${imageUrls.length} image URLs`);
+                    // console.log(`Retrieved ${imageUrls.length} image URLs`);
                     
                     if (imageUrls.length > 0) {
                         const randomIndex = Math.floor(Math.random() * imageUrls.length);
                         const selectedImageUrl = imageUrls[randomIndex];
-                        console.log('Selected image URL:', selectedImageUrl);
+                        // console.log('Selected image URL:', selectedImageUrl);
                         return selectedImageUrl;
                     }
                 }
@@ -465,24 +466,24 @@ module.exports = class PexelsBannerPlugin extends Plugin {
         }
 
         console.error('No images found after all attempts');
-        new Notice('Failed to fetch an image after multiple attempts');
+        new Notice('Failed to fetch an image after multiple attempts, try a different keyword and/or update the backup keyword list in settings.');
         return null;
     }
 
     async makeRequest(url) {
-        console.log('Entering makeRequest with URL:', url);
+        // console.log('Entering makeRequest with URL:', url);
         // Implement rate limiting
         const now = Date.now();
         if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
-            console.log('Rate limiting in effect, waiting...');
+            // console.log('Rate limiting in effect, waiting...');
             await new Promise(resolve => setTimeout(resolve, this.rateLimiter.minInterval));
         }
         this.rateLimiter.lastRequestTime = Date.now();
 
         try {
-            console.log('Sending request');
+            // console.log('Sending request');
             const response = await requestUrl({ url });
-            console.log('Response received:', response);
+            // console.log('Response received:', response);
             return response;
         } catch (error) {
             console.error('Request failed:', error);
@@ -566,7 +567,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     async postProcessor(el, ctx) {
         const frontmatter = ctx.frontmatter;
         if (frontmatter && frontmatter[this.settings.customBannerField]) {
-            await this.addPexelsBanner(el, {
+            await this.addPixelBanner(el, {
                 frontmatter,
                 file: ctx.sourcePath,
                 isContentChange: false,
@@ -589,7 +590,7 @@ module.exports = class PexelsBannerPlugin extends Plugin {
     }
 
     applyContentStartPosition(el, contentStartPosition) {
-        el.style.setProperty('--pexels-banner-content-start', `${contentStartPosition}px`);
+        el.style.setProperty('--pixel-banner-content-start', `${contentStartPosition}px`);
     }
 
     getFolderSpecificSetting(filePath, settingName) {
