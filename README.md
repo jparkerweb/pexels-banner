@@ -21,7 +21,7 @@ Pixel Banner is a plugin for Obsidian that allows you to automatically add beaut
 
 1. Open Obsidian and go to Settings
 2. Navigate to Community Plugins and disable Safe Mode
-3. Click on Browse and search for "Pixel Banner"
+3. Click on Browse and search for "Pexels Banner" or "Pixel Banner"
 4. Install the plugin and enable it
 
 ### Manual Installation
