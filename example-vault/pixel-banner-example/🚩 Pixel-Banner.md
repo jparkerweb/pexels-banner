@@ -3,7 +3,7 @@ banner: "[[jp-cover4.jpg]]"
 banner-y: 30
 content-start: "200"
 ---
-# 🚩 Pexels-Banner Example Vault
+# 🚩 Pixel-Banner Example Vault
 
 ---
 

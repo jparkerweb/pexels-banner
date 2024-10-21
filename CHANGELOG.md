@@ -1,6 +1,13 @@
 # Changelog
 
-All notable changes to the Pexels Banner plugin will be documented in this file.
+All notable changes to the Pixel Banner plugin will be documented in this file.
+
+## [2.0.0] - 2024-10-21
+
+### Added
+- Rebrand to Pixel Banner
+- Add support for Pixabay API
+- Save and switch between API providers in settings
 
 ## [1.5.0] - 2024-10-19
 
@@ -71,7 +78,7 @@ All notable changes to the Pexels Banner plugin will be documented in this file.
 ## [1.0.0] - 2024-09-23
 
 ### Added
-- Initial release of the Pexels Banner plugin.
+- Initial release of the Pixel Banner plugin.
 - Fetch and display banner images from Pexels based on keywords.
 - Support for direct image URLs.
 - Customizable image size and orientation.

@@ -1,10 +1,10 @@
-# 🚩 Pexels Banner for Obsidian
+# 🚩 Pixel Banner for Obsidian
 
-Pexels Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels API, direct URLs, or folder-specific settings. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
+Pixel Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels/Pixabay APIs, direct URLs, or folder-specific settings. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
 
 ## Features
 
-- Automatically fetch and display banner images from Pexels based on keywords
+- Automatically fetch and display banner images from Pexels/Pixabay based on keywords
 - Use direct URLs for custom images
 - Use local images from your vault
 - Use Obsidian internal links to images
@@ -21,16 +21,16 @@ Pexels Banner is a plugin for Obsidian that allows you to automatically add beau
 
 1. Open Obsidian and go to Settings
 2. Navigate to Community Plugins and disable Safe Mode
-3. Click on Browse and search for "Pexels Banner"
+3. Click on Browse and search for "Pixel Banner"
 4. Install the plugin and enable it
 
 ### Manual Installation
-- Unzip the [latest release](https://github.com/jparkerweb/pexels-banner/releases/latest) into your `<vault>/.obsidian/plugins/` folder.
+- Unzip the [latest release](https://github.com/jparkerweb/pixel-banner/releases/latest) into your `<vault>/.obsidian/plugins/` folder.
 
 ## Usage
 
-1. Obtain a free API key from [Pexels](https://www.pexels.com/api/)
-2. In Obsidian, go to Settings > Pexels Banner and enter your API key
+1. Obtain a free API key from [Pexels](https://www.pexels.com/api/) or [Pixabay](https://pixabay.com/api/docs/)
+2. In Obsidian, go to Settings > Pixel Banner and enter your API key(s)
 3. In any note, add a `banner` field to the frontmatter with keywords for the desired image, a direct URL, a path to a local image, or an Obsidian internal link:
 
 ```yaml
@@ -84,7 +84,7 @@ banner-repeat: true
 
 You can set default banner images for entire folders:
 
-1. Go to Settings > Pexels Banner
+1. Go to Settings > Pixel Banner
 2. Scroll down to the "Folder Images" section
 3. Click "Add Folder Image"
 4. Enter the folder path, image URL or keyword, and Y-position
@@ -110,7 +110,7 @@ The global y-position can be overridden on a per-note basis using the `banner-y`
 
 You can customize the frontmatter field names used for the banner and Y-position:
 
-1. Go to Settings > Pexels Banner
+1. Go to Settings > Pixel Banner
 2. Scroll down to the "Custom Field Names" section
 3. Enter your preferred field names for the banner and Y-position
 4. Use these custom field names in your frontmatter instead of the default ones
@@ -128,7 +128,7 @@ my-y-pos: 60
 
 You can set a custom start position for the content below the banner image:
 
-1. Go to Settings > Pexels Banner
+1. Go to Settings > Pixel Banner
 2. Scroll down to the "Content Start Position" section
 3. Enter a value (in pixels) to adjust where the content starts below the banner
 4. This setting can be overridden on a per-note basis using the `content-start` frontmatter field
@@ -158,8 +158,8 @@ content-start: 200
 
 ## Feedback and Support
 
-If you encounter any issues or have suggestions for improvements, please [open an issue](https://github.com/jparkerweb/pexels-banner/issues) on the GitHub repository.
+If you encounter any issues or have suggestions for improvements, please [open an issue](https://github.com/jparkerweb/pixel-banner/issues) on the GitHub repository.
 
 ## Credits
 
-This plugin uses the [Pexels API](https://www.pexels.com/api/) to fetch images. Special thanks to Pexels for providing this service.
+This plugin optionally uses the [Pexels](https://www.pexels.com/api/) and [Pixabay](https://pixabay.com/api/docs/) APIs to fetch images. Special thanks to Pexels / Pixabay for providing this service.

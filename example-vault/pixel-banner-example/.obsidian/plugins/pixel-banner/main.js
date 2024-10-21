@@ -13,7 +13,9 @@ var import_obsidian2 = require("obsidian");
 // src/settings.js
 var import_obsidian = require("obsidian");
 var DEFAULT_SETTINGS = {
-  apiKey: "",
+  apiProvider: "pexels",
+  pexelsApiKey: "",
+  pixabayApiKey: "",
   imageSize: "medium",
   imageOrientation: "landscape",
   numberOfImages: 10,
@@ -173,7 +175,7 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     });
   }
 };
-var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
+var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -181,10 +183,10 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.addClass("pexels-banner-settings");
-    const mainContent = containerEl.createEl("div", { cls: "pexels-banner-main-content" });
-    const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ["Pexels API", "General", "Custom Field Names", "Folder Images", "Examples"]);
-    const apiTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "Pexels API" } });
+    containerEl.addClass("pixel-banner-settings");
+    const mainContent = containerEl.createEl("div", { cls: "pixel-banner-main-content" });
+    const { tabsEl, tabContentContainer } = this.createTabs(mainContent, ["API Settings", "General", "Custom Field Names", "Folder Images", "Examples"]);
+    const apiTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "API Settings" } });
     this.createAPISettings(apiTab);
     const generalTab = tabContentContainer.createEl("div", { cls: "tab-content", attr: { "data-tab": "General" } });
     this.createGeneralSettings(generalTab);
@@ -197,12 +199,12 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     tabsEl.firstChild.click();
   }
   createTabs(containerEl, tabNames) {
-    const tabsEl = containerEl.createEl("div", { cls: "pexels-banner-settings-tabs" });
-    const tabContentContainer = containerEl.createEl("div", { cls: "pexels-banner-settings-tab-content-container" });
+    const tabsEl = containerEl.createEl("div", { cls: "pixel-banner-settings-tabs" });
+    const tabContentContainer = containerEl.createEl("div", { cls: "pixel-banner-settings-tab-content-container" });
     tabNames.forEach((tabName) => {
-      const tabEl = tabsEl.createEl("button", { cls: "pexels-banner-settings-tab", text: tabName });
+      const tabEl = tabsEl.createEl("button", { cls: "pixel-banner-settings-tab", text: tabName });
       tabEl.addEventListener("click", () => {
-        tabsEl.querySelectorAll(".pexels-banner-settings-tab").forEach((tab) => tab.removeClass("active"));
+        tabsEl.querySelectorAll(".pixel-banner-settings-tab").forEach((tab) => tab.removeClass("active"));
         tabContentContainer.querySelectorAll(".tab-content").forEach((content) => content.style.display = "none");
         tabEl.addClass("active");
         tabContentContainer.querySelector(`.tab-content[data-tab="${tabName}"]`).style.display = "block";
@@ -211,49 +213,43 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     return { tabsEl, tabContentContainer };
   }
   createAPISettings(containerEl) {
-    const calloutEl = containerEl.createEl("div", { cls: "callout" });
-    calloutEl.createEl("p", { text: "Note: This section is only needed if you plan on using Pexels to fetch images. You can use direct URLs or local images without an API key. See the Examples tab for more information on how to use different image sources." });
-    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
-    calloutEl.style.border = "1px solid var(--background-modifier-border)";
-    calloutEl.style.color = "var(--text-accent)";
-    calloutEl.style.fontSize = "0.9em";
-    calloutEl.style.borderRadius = "5px";
-    calloutEl.style.padding = "0 25px";
-    calloutEl.style.marginBottom = "20px";
-    const apiKeySetting = new import_obsidian.Setting(containerEl).setName("Pexels API key").setDesc("Enter your Pexels API key. This is only required if you want to fetch images from Pexels using keywords. It's not needed for using direct URLs or local images.").addText((text) => {
-      text.setPlaceholder("Enter your API key").setValue(this.plugin.settings.apiKey).onChange(async (value) => {
-        this.plugin.settings.apiKey = value;
-        await this.plugin.saveSettings();
-      });
-      text.inputEl.style.marginTop = "15px";
-      text.inputEl.style.width = "100%";
-    });
-    apiKeySetting.settingEl.dataset.id = "apiKey";
-    apiKeySetting.settingEl.style.display = "flex";
-    apiKeySetting.settingEl.style.flexDirection = "column";
-    new import_obsidian.Setting(containerEl).setName("Images").setDesc("Configure settings for images fetched from Pexels. These settings apply when using keywords to fetch random images.").setHeading();
-    new import_obsidian.Setting(containerEl).setName("Size").setDesc("Select the size of the image - (Pexels API only)").addDropdown((dropdown) => dropdown.addOption("small", "Small").addOption("medium", "Medium").addOption("large", "Large").setValue(this.plugin.settings.imageSize).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("API Provider").setDesc("Select the API provider for fetching images").addDropdown((dropdown) => dropdown.addOption("pexels", "Pexels").addOption("pixabay", "Pixabay").setValue(this.plugin.settings.apiProvider).onChange(async (value) => {
+      this.plugin.settings.apiProvider = value;
+      await this.plugin.saveSettings();
+      this.display();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Pexels API Key").setDesc("Enter your Pexels API key").addText((text) => text.setPlaceholder("Enter your Pexels API key").setValue(this.plugin.settings.pexelsApiKey).onChange(async (value) => {
+      this.plugin.settings.pexelsApiKey = value;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Pixabay API Key").setDesc("Enter your Pixabay API key").addText((text) => text.setPlaceholder("Enter your Pixabay API key").setValue(this.plugin.settings.pixabayApiKey).onChange(async (value) => {
+      this.plugin.settings.pixabayApiKey = value;
+      await this.plugin.saveSettings();
+    }));
+    new import_obsidian.Setting(containerEl).setName("Images").setDesc("Configure settings for images fetched from API. These settings apply when using keywords to fetch random images.").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Size").setDesc("Select the size of the image - (API only)").addDropdown((dropdown) => dropdown.addOption("small", "Small").addOption("medium", "Medium").addOption("large", "Large").setValue(this.plugin.settings.imageSize).onChange(async (value) => {
       this.plugin.settings.imageSize = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Orientation").setDesc("Select the orientation of the image - (Pexels API only)").addDropdown((dropdown) => dropdown.addOption("landscape", "Landscape").addOption("portrait", "Portrait").addOption("square", "Square").setValue(this.plugin.settings.imageOrientation).onChange(async (value) => {
+    new import_obsidian.Setting(containerEl).setName("Orientation").setDesc("Select the orientation of the image - (API only)").addDropdown((dropdown) => dropdown.addOption("landscape", "Landscape").addOption("portrait", "Portrait").addOption("square", "Square").setValue(this.plugin.settings.imageOrientation).onChange(async (value) => {
       this.plugin.settings.imageOrientation = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Number of images").setDesc("Enter the number of random images to fetch (1-50) - (Pexels API only)").addText((text) => text.setPlaceholder("10").setValue(String(this.plugin.settings.numberOfImages || 10)).onChange(async (value) => {
-      const numValue = Number(value);
-      if (!isNaN(numValue) && numValue >= 1 && numValue <= 50) {
+    new import_obsidian.Setting(containerEl).setName("Number of images").setDesc("Enter the number of random images to fetch (3-50) - (API only)").addText((text) => text.setPlaceholder("10").setValue(String(this.plugin.settings.numberOfImages || 10)).onChange(async (value) => {
+      let numValue = Number(value);
+      if (!isNaN(numValue)) {
+        numValue = Math.max(3, Math.min(numValue, 50));
         this.plugin.settings.numberOfImages = numValue;
         await this.plugin.saveSettings();
       }
     })).then((setting) => {
       const inputEl = setting.controlEl.querySelector("input");
       inputEl.type = "number";
-      inputEl.min = "1";
+      inputEl.min = "3";
       inputEl.max = "50";
       inputEl.style.width = "50px";
     });
-    const defaultKeywordsSetting = new import_obsidian.Setting(containerEl).setName("Default keywords").setDesc("Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (Pexels API only)").addTextArea((text) => {
+    const defaultKeywordsSetting = new import_obsidian.Setting(containerEl).setName("Default keywords").setDesc("Enter a comma-separated list of default keywords to be used when no keyword is provided in the frontmatter, or when the provided keyword does not return any results. - (API only)").addTextArea((text) => {
       text.setPlaceholder("Enter keywords, separated by commas").setValue(this.plugin.settings.defaultKeywords).onChange(async (value) => {
         this.plugin.settings.defaultKeywords = value;
         await this.plugin.saveSettings();
@@ -315,7 +311,7 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     calloutEl.style.padding = "0 25px";
     calloutEl.style.marginBottom = "20px";
     new import_obsidian.Setting(containerEl).setName("Banner Field Name").setDesc("Set a custom field name for the banner in frontmatter").addText((text) => {
-      text.setPlaceholder("pexels-banner").setValue(this.plugin.settings.customBannerField).onChange(async (value) => {
+      text.setPlaceholder("pixel-banner").setValue(this.plugin.settings.customBannerField).onChange(async (value) => {
         if (this.validateFieldName(value, this.plugin.settings.customYPositionField) && this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
           this.plugin.settings.customBannerField = value;
           await this.plugin.saveSettings();
@@ -330,7 +326,7 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.display();
     }));
     new import_obsidian.Setting(containerEl).setName("Y-Position Field Name").setDesc("Set a custom field name for the Y-position in frontmatter").addText((text) => {
-      text.setPlaceholder("pexels-banner-y-position").setValue(this.plugin.settings.customYPositionField).onChange(async (value) => {
+      text.setPlaceholder("pixel-banner-y-position").setValue(this.plugin.settings.customYPositionField).onChange(async (value) => {
         if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
           this.plugin.settings.customYPositionField = value;
           await this.plugin.saveSettings();
@@ -345,7 +341,7 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.display();
     }));
     new import_obsidian.Setting(containerEl).setName("Content Start Position Field Name").setDesc("Set a custom field name for the content start position in frontmatter").addText((text) => {
-      text.setPlaceholder("pexels-banner-content-start").setValue(this.plugin.settings.customContentStartField).onChange(async (value) => {
+      text.setPlaceholder("pixel-banner-content-start").setValue(this.plugin.settings.customContentStartField).onChange(async (value) => {
         if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customYPositionField)) {
           this.plugin.settings.customContentStartField = value;
           await this.plugin.saveSettings();
@@ -416,7 +412,7 @@ var PexelsBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   }
   createExampleSettings(containerEl) {
     new import_obsidian.Setting(containerEl).setName("How to use").setHeading();
-    const instructionsEl = containerEl.createEl("div", { cls: "pexels-banner-section" });
+    const instructionsEl = containerEl.createEl("div", { cls: "pixel-banner-section" });
     instructionsEl.createEl("p", { text: "Add the following fields to your note's frontmatter to customize the banner:" });
     const codeEl = instructionsEl.createEl("pre");
     codeEl.createEl("code", {
@@ -456,8 +452,8 @@ ${this.plugin.settings.customImageRepeatField}: false
     instructionsEl.createEl("p", { text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".' });
     containerEl.createEl("img", {
       attr: {
-        src: "https://raw.githubusercontent.com/jparkerweb/pexels-banner/main/example.jpg",
-        alt: "Example of a Pexels banner",
+        src: "https://raw.githubusercontent.com/jparkerweb/pixel-banner/main/example.jpg",
+        alt: "Example of a Pixel banner",
         style: "max-width: 100%; height: auto; margin-top: 10px; border-radius: 5px;"
       }
     });
@@ -483,7 +479,7 @@ function debounce(func, wait) {
 }
 
 // src/main.js
-module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
+module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "debounceTimer", null);
@@ -496,6 +492,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
       // 1 second between requests
     });
     __publicField(this, "lastYPositions", /* @__PURE__ */ new Map());
+    __publicField(this, "lastFrontmatter", /* @__PURE__ */ new Map());
     __publicField(this, "debouncedEnsureBanner", debounce(() => {
       const activeLeaf = this.app.workspace.activeLeaf;
       if (activeLeaf && activeLeaf.view instanceof import_obsidian2.MarkdownView) {
@@ -505,7 +502,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
   }
   async onload() {
     await this.loadSettings();
-    this.addSettingTab(new PexelsBannerSettingTab(this.app, this));
+    this.addSettingTab(new PixelBannerSettingTab(this.app, this));
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", this.handleActiveLeafChange.bind(this))
     );
@@ -549,10 +546,21 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     }
   }
   async handleMetadataChange(file) {
+    var _a;
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view instanceof import_obsidian2.MarkdownView && activeLeaf.view.file && activeLeaf.view.file === file) {
-      await this.updateBanner(activeLeaf.view, true);
+      const currentFrontmatter = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
+      const cachedFrontmatter = this.lastFrontmatter.get(file.path);
+      if (this.isFrontmatterChange(cachedFrontmatter, currentFrontmatter)) {
+        this.lastFrontmatter.set(file.path, currentFrontmatter);
+        await this.updateBanner(activeLeaf.view, true);
+      }
     }
+  }
+  isFrontmatterChange(cachedFrontmatter, currentFrontmatter) {
+    if (!cachedFrontmatter && !currentFrontmatter) return false;
+    if (!cachedFrontmatter || !currentFrontmatter) return true;
+    return JSON.stringify(cachedFrontmatter) !== JSON.stringify(currentFrontmatter);
   }
   handleLayoutChange() {
     setTimeout(() => {
@@ -600,7 +608,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
       this.loadedImages.delete(view.file.path);
       this.lastKeywords.delete(view.file.path);
     }
-    await this.addPexelsBanner(contentEl, {
+    await this.addPixelBanner(contentEl, {
       frontmatter,
       file: view.file,
       isContentChange,
@@ -626,14 +634,14 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
       }
     }
   }
-  async addPexelsBanner(el, ctx) {
+  async addPixelBanner(el, ctx) {
     const { frontmatter, file, isContentChange, yPosition, contentStartPosition, bannerImage, isReadingView } = ctx;
     const viewContent = el;
     const isEmbedded = viewContent.classList.contains("internal-embed");
     if (!isEmbedded && !viewContent.classList.contains("view-content")) {
       return;
     }
-    viewContent.classList.toggle("pexels-banner", !!bannerImage);
+    viewContent.classList.toggle("pixel-banner", !!bannerImage);
     let container;
     if (isEmbedded) {
       container = viewContent.querySelector(".markdown-embed-content");
@@ -643,9 +651,9 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     if (!container) {
       return;
     }
-    let bannerDiv = container.querySelector(":scope > .pexels-banner-image");
+    let bannerDiv = container.querySelector(":scope > .pixel-banner-image");
     if (!bannerDiv) {
-      bannerDiv = createDiv({ cls: "pexels-banner-image" });
+      bannerDiv = createDiv({ cls: "pixel-banner-image" });
       container.insertBefore(bannerDiv, container.firstChild);
     }
     if (bannerImage) {
@@ -684,7 +692,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
           const removedNodes = Array.from(mutation.removedNodes);
           const addedNodes = Array.from(mutation.addedNodes);
           const bannerRemoved = removedNodes.some(
-            (node) => node.classList && node.classList.contains("pexels-banner-image")
+            (node) => node.classList && node.classList.contains("pixel-banner-image")
           );
           const contentChanged = addedNodes.some(
             (node) => node.nodeType === Node.ELEMENT_NODE && (node.classList.contains("markdown-preview-section") || node.classList.contains("cm-content"))
@@ -717,32 +725,34 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     const lastSlashIndex = filePath.lastIndexOf("/");
     return lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : "";
   }
-  async getImageUrl(inputType, input) {
-    switch (inputType) {
-      case "url":
-        return input;
-      case "vaultPath":
-        return await this.getVaultImageUrl(input);
-      case "obsidianLink":
-        const resolvedFile = this.getPathFromObsidianLink(input);
-        return resolvedFile ? await this.getVaultImageUrl(resolvedFile.path) : null;
-      case "keyword":
-        return await this.fetchPexelsImage(input);
-      default:
-        return null;
+  async getImageUrl(type, input) {
+    if (type === "url" || type === "path") {
+      return input;
     }
-  }
-  preloadImage(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(url);
-      img.onerror = reject;
-      img.src = url;
-    });
+    if (type === "obsidianLink") {
+      const file = this.getPathFromObsidianLink(input);
+      if (file) {
+        return this.getVaultImageUrl(file.path);
+      }
+      return null;
+    }
+    if (type === "vaultPath") {
+      return this.getVaultImageUrl(input);
+    }
+    if (type === "keyword") {
+      if (this.settings.apiProvider === "pexels") {
+        return this.fetchPexelsImage(input);
+      } else if (this.settings.apiProvider === "pixabay") {
+        return this.fetchPixabayImage(input);
+      }
+    }
+    return null;
   }
   async fetchPexelsImage(keyword) {
-    if (this.imageCache.has(keyword)) {
-      return this.imageCache.get(keyword);
+    const apiKey = this.settings.pexelsApiKey;
+    if (!apiKey) {
+      new import_obsidian2.Notice("Pexels API key is not set. Please set it in the plugin settings.");
+      return null;
     }
     const now = Date.now();
     if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
@@ -758,12 +768,12 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
           url: `https://api.pexels.com/v1/search?query=${encodeURIComponent(currentKeyword)}&per_page=${this.settings.numberOfImages}&size=${this.settings.imageSize}&orientation=${this.settings.imageOrientation}`,
           method: "GET",
           headers: {
-            "Authorization": this.settings.apiKey
+            "Authorization": apiKey
           }
         });
         if (response.status !== 200) {
           console.error("Failed to fetch images:", response.status, response.text);
-          return null;
+          continue;
         }
         const data = response.json;
         if (data.photos && data.photos.length > 0) {
@@ -771,8 +781,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
           if (currentKeyword !== keyword) {
             console.log(`No image found for "${keyword}". Using image for "${currentKeyword}" instead.`);
           }
-          const imageUrl = data.photos[randomIndex].src.original;
-          this.imageCache.set(keyword, imageUrl);
+          const imageUrl = data.photos[randomIndex].src[this.settings.imageSize];
           try {
             await this.preloadImage(imageUrl);
           } catch (error) {
@@ -783,12 +792,89 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
           console.log(`No image found for the provided keyword: "${keyword}". Trying a random default keyword.`);
         }
       } catch (error) {
-        console.error(`Error fetching image from Pexels API for keyword "${currentKeyword}":`, error);
+        console.error(`Error fetching image from API for keyword "${currentKeyword}":`, error);
         new import_obsidian2.Notice(`Failed to fetch image: ${error.message}`);
       }
     }
     console.error("No images found for any keywords, including the random default.");
     return null;
+  }
+  async fetchPixabayImage(keyword) {
+    const apiKey = this.settings.pixabayApiKey;
+    if (!apiKey) {
+      new import_obsidian2.Notice("Pixabay API key is not set. Please set it in the plugin settings.");
+      return null;
+    }
+    const defaultKeywords = this.settings.defaultKeywords.split(",").map((k) => k.trim());
+    const keywordsToTry = [keyword, ...defaultKeywords];
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const currentKeyword = attempt === 0 ? keyword : keywordsToTry[Math.floor(Math.random() * keywordsToTry.length)];
+      const apiUrl = "https://pixabay.com/api/";
+      const params = new URLSearchParams({
+        key: apiKey,
+        q: encodeURIComponent(currentKeyword),
+        image_type: "photo",
+        per_page: this.settings.numberOfImages,
+        safesearch: true
+      });
+      try {
+        const response = await this.makeRequest(`${apiUrl}?${params}`);
+        if (response.status !== 200) {
+          console.error(`Pixabay API error: ${response.status} ${response.statusText}`);
+          continue;
+        }
+        let data;
+        if (response.arrayBuffer) {
+          const text = new TextDecoder().decode(response.arrayBuffer);
+          try {
+            data = JSON.parse(text);
+          } catch (error) {
+            console.error("Failed to parse Pixabay response:", error);
+            continue;
+          }
+        } else {
+          console.error("Unexpected response format:", response);
+          continue;
+        }
+        if (data.hits && data.hits.length > 0) {
+          const imageUrls = data.hits.map((hit) => hit.largeImageURL);
+          if (imageUrls.length > 0) {
+            const randomIndex = Math.floor(Math.random() * imageUrls.length);
+            const selectedImageUrl = imageUrls[randomIndex];
+            return selectedImageUrl;
+          }
+        }
+        console.log(`No images found for keyword: ${currentKeyword}`);
+      } catch (error) {
+        console.error("Error fetching image from Pixabay:", error);
+      }
+    }
+    console.error("No images found after all attempts");
+    new import_obsidian2.Notice("Failed to fetch an image after multiple attempts, try a different keyword and/or update the backup keyword list in settings.");
+    return null;
+  }
+  async makeRequest(url) {
+    const now = Date.now();
+    if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
+      await new Promise((resolve) => setTimeout(resolve, this.rateLimiter.minInterval));
+    }
+    this.rateLimiter.lastRequestTime = Date.now();
+    try {
+      const response = await (0, import_obsidian2.requestUrl)({ url });
+      return response;
+    } catch (error) {
+      console.error("Request failed:", error);
+      throw new Error(`Request failed: ${error.message}`);
+    }
+  }
+  preloadImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(url);
+      img.onerror = reject;
+      img.src = url;
+    });
   }
   getInputType(input) {
     if (typeof input !== "string") {
@@ -841,7 +927,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
   async postProcessor(el, ctx) {
     const frontmatter = ctx.frontmatter;
     if (frontmatter && frontmatter[this.settings.customBannerField]) {
-      await this.addPexelsBanner(el, {
+      await this.addPixelBanner(el, {
         frontmatter,
         file: ctx.sourcePath,
         isContentChange: false,
@@ -862,7 +948,7 @@ module.exports = class PexelsBannerPlugin extends import_obsidian2.Plugin {
     }
   }
   applyContentStartPosition(el, contentStartPosition) {
-    el.style.setProperty("--pexels-banner-content-start", `${contentStartPosition}px`);
+    el.style.setProperty("--pixel-banner-content-start", `${contentStartPosition}px`);
   }
   getFolderSpecificSetting(filePath, settingName) {
     const folderPath = this.getFolderPath(filePath);

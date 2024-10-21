@@ -1,7 +1,7 @@
 {
     "scripts": {
         "dev": "node esbuild.config.mjs",
-        "test-build": "node esbuild.config.mjs production && cp styles.css main.js manifest.json example-vault/pexels-banner-example/.obsidian/plugins/pexels-banner",
+        "test-build": "node esbuild.config.mjs production && cp styles.css main.js manifest.json example-vault/pixel-banner-example/.obsidian/plugins/pixel-banner",
         "build": "node esbuild.config.mjs production"
     },
     "devDependencies": {
