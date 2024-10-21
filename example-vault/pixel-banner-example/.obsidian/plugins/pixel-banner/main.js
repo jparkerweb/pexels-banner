@@ -235,16 +235,17 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.imageOrientation = value;
       await this.plugin.saveSettings();
     }));
-    new import_obsidian.Setting(containerEl).setName("Number of images").setDesc("Enter the number of random images to fetch (1-50) - (API only)").addText((text) => text.setPlaceholder("10").setValue(String(this.plugin.settings.numberOfImages || 10)).onChange(async (value) => {
-      const numValue = Number(value);
-      if (!isNaN(numValue) && numValue >= 1 && numValue <= 50) {
+    new import_obsidian.Setting(containerEl).setName("Number of images").setDesc("Enter the number of random images to fetch (3-50) - (API only)").addText((text) => text.setPlaceholder("10").setValue(String(this.plugin.settings.numberOfImages || 10)).onChange(async (value) => {
+      let numValue = Number(value);
+      if (!isNaN(numValue)) {
+        numValue = Math.max(3, Math.min(numValue, 50));
         this.plugin.settings.numberOfImages = numValue;
         await this.plugin.saveSettings();
       }
     })).then((setting) => {
       const inputEl = setting.controlEl.querySelector("input");
       inputEl.type = "number";
-      inputEl.min = "1";
+      inputEl.min = "3";
       inputEl.max = "50";
       inputEl.style.width = "50px";
     });
@@ -491,6 +492,7 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       // 1 second between requests
     });
     __publicField(this, "lastYPositions", /* @__PURE__ */ new Map());
+    __publicField(this, "lastFrontmatter", /* @__PURE__ */ new Map());
     __publicField(this, "debouncedEnsureBanner", debounce(() => {
       const activeLeaf = this.app.workspace.activeLeaf;
       if (activeLeaf && activeLeaf.view instanceof import_obsidian2.MarkdownView) {
@@ -544,10 +546,21 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     }
   }
   async handleMetadataChange(file) {
+    var _a;
     const activeLeaf = this.app.workspace.activeLeaf;
     if (activeLeaf && activeLeaf.view instanceof import_obsidian2.MarkdownView && activeLeaf.view.file && activeLeaf.view.file === file) {
-      await this.updateBanner(activeLeaf.view, true);
+      const currentFrontmatter = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter;
+      const cachedFrontmatter = this.lastFrontmatter.get(file.path);
+      if (this.isFrontmatterChange(cachedFrontmatter, currentFrontmatter)) {
+        this.lastFrontmatter.set(file.path, currentFrontmatter);
+        await this.updateBanner(activeLeaf.view, true);
+      }
     }
+  }
+  isFrontmatterChange(cachedFrontmatter, currentFrontmatter) {
+    if (!cachedFrontmatter && !currentFrontmatter) return false;
+    if (!cachedFrontmatter || !currentFrontmatter) return true;
+    return JSON.stringify(cachedFrontmatter) !== JSON.stringify(currentFrontmatter);
   }
   handleLayoutChange() {
     setTimeout(() => {

@@ -341,13 +341,14 @@ class PixelBannerSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Number of images')
-            .setDesc('Enter the number of random images to fetch (1-50) - (API only)')
+            .setDesc('Enter the number of random images to fetch (3-50) - (API only)')
             .addText(text => text
                 .setPlaceholder('10')
                 .setValue(String(this.plugin.settings.numberOfImages || 10))
                 .onChange(async (value) => {
-                    const numValue = Number(value);
-                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 50) {
+                    let numValue = Number(value);
+                    if (!isNaN(numValue)) {
+                        numValue = Math.max(3, Math.min(numValue, 50)); // Ensure value is between 3 and 50
                         this.plugin.settings.numberOfImages = numValue;
                         await this.plugin.saveSettings();
                     }
@@ -355,7 +356,7 @@ class PixelBannerSettingTab extends PluginSettingTab {
             .then(setting => {
                 const inputEl = setting.controlEl.querySelector('input');
                 inputEl.type = 'number';
-                inputEl.min = '1';
+                inputEl.min = '3'; // Set minimum to 3
                 inputEl.max = '50';
                 inputEl.style.width = '50px';
             });

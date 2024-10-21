@@ -11,6 +11,7 @@ module.exports = class PixelBannerPlugin extends Plugin {
         minInterval: 1000 // 1 second between requests
     };
     lastYPositions = new Map();
+    lastFrontmatter = new Map();
 
     async onload() {
         await this.loadSettings();
@@ -77,8 +78,20 @@ module.exports = class PixelBannerPlugin extends Plugin {
     async handleMetadataChange(file) {
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view instanceof MarkdownView && activeLeaf.view.file && activeLeaf.view.file === file) {
-            await this.updateBanner(activeLeaf.view, true);
+            const currentFrontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+            const cachedFrontmatter = this.lastFrontmatter.get(file.path);
+
+            if (this.isFrontmatterChange(cachedFrontmatter, currentFrontmatter)) {
+                this.lastFrontmatter.set(file.path, currentFrontmatter);
+                await this.updateBanner(activeLeaf.view, true);
+            }
         }
+    }
+
+    isFrontmatterChange(cachedFrontmatter, currentFrontmatter) {
+        if (!cachedFrontmatter && !currentFrontmatter) return false;
+        if (!cachedFrontmatter || !currentFrontmatter) return true;
+        return JSON.stringify(cachedFrontmatter) !== JSON.stringify(currentFrontmatter);
     }
 
     handleLayoutChange() {

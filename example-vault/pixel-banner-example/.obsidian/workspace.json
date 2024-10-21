@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "a7c2a780e32c3d25",
+        "id": "b0fdbc2cc5f63d9c",
         "type": "tabs",
         "children": [
           {
-            "id": "439805c24e40369a",
+            "id": "94198b78c3ac6720",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -162,7 +162,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "439805c24e40369a",
+  "active": "94198b78c3ac6720",
   "lastOpenFiles": [
     "bay.md",
     "🚩 Pixel-Banner.md",
