@@ -1,0 +1,11 @@
+{
+    "id": "pexels-banner",
+    "name": "Pixel Banner",
+    "version": "2.0.0",
+    "minAppVersion": "1.6.0",
+    "description": "Apply an image from various sources as a banner to your notes.",
+    "author": "Justin Parker",
+    "authorUrl": "https://www.jparkerweb.com",
+    "fundingUrl": "https://ko-fi.com/jparkerweb", 
+    "isDesktopOnly": false
+}
