@@ -117,13 +117,10 @@ module.exports = class PixelBannerPlugin extends Plugin {
 
         const frontmatter = this.app.metadataCache.getFileCache(view.file)?.frontmatter;
         const contentEl = view.contentEl;
-        const customBannerField = this.settings.customBannerField;
-        const customYPositionField = this.settings.customYPositionField;
-        const customContentStartField = this.settings.customContentStartField;
         
         let yPosition = this.settings.yPosition;
         let contentStartPosition = this.settings.contentStartPosition;
-        let bannerImage = frontmatter && frontmatter[customBannerField];
+        let bannerImage = getFrontmatterValue(frontmatter, this.settings.customBannerField);
 
         // Check for folder-specific settings
         const folderSpecific = this.getFolderSpecificImage(view.file.path);
@@ -135,11 +132,11 @@ module.exports = class PixelBannerPlugin extends Plugin {
 
         // Override with note-specific settings if available
         if (frontmatter) {
-            const customYPosition = frontmatter[customYPositionField];
+            const customYPosition = getFrontmatterValue(frontmatter, this.settings.customYPositionField);
             if (customYPosition !== undefined) {
                 yPosition = customYPosition;
             }
-            const customContentStart = frontmatter[customContentStartField];
+            const customContentStart = getFrontmatterValue(frontmatter, this.settings.customContentStartField);
             if (customContentStart !== undefined) {
                 contentStartPosition = customContentStart;
             }
@@ -156,9 +153,9 @@ module.exports = class PixelBannerPlugin extends Plugin {
             isContentChange,
             yPosition,
             contentStartPosition,
-            customBannerField,
-            customYPositionField,
-            customContentStartField,
+            customBannerField: this.settings.customBannerField,
+            customYPositionField: this.settings.customYPositionField,
+            customContentStartField: this.settings.customContentStartField,
             bannerImage,
             isReadingView: view.getMode && view.getMode() === 'preview'
         });
@@ -615,4 +612,16 @@ module.exports = class PixelBannerPlugin extends Plugin {
         }
         return undefined;
     }
+}
+
+// Add this helper function at the top level
+function getFrontmatterValue(frontmatter, fieldNames) {
+    if (!frontmatter || !Array.isArray(fieldNames)) return undefined;
+    
+    for (const fieldName of fieldNames) {
+        if (fieldName in frontmatter) {
+            return frontmatter[fieldName];
+        }
+    }
+    return undefined;
 }

@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "b0fdbc2cc5f63d9c",
+        "id": "bc9b7b40c50084d5",
         "type": "tabs",
         "children": [
           {
-            "id": "94198b78c3ac6720",
+            "id": "4cf204520ae3e2a2",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,23 +20,8 @@
               "icon": "lucide-file",
               "title": "🚩 Pixel-Banner"
             }
-          },
-          {
-            "id": "688a4bb7d377348f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "🚩 Pixel-Banner.md",
-                "mode": "preview",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "🚩 Pixel-Banner"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -177,12 +162,12 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "688a4bb7d377348f",
+  "active": "4cf204520ae3e2a2",
   "lastOpenFiles": [
+    "🚩 Pixel-Banner.md",
     "embeds/📃 Embedded Note.md",
     "test.md",
     "embeds/📜 Embedded Note with Banner.md",
-    "🚩 Pixel-Banner.md",
     "banners/jp-cover4a.jpg",
     "banners/jp-cover4.jpg",
     "banners/jp-cover3a.jpg",

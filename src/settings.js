@@ -9,15 +9,16 @@ const DEFAULT_SETTINGS = {
     numberOfImages: 10,
     defaultKeywords: 'nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns',
     yPosition: 50,
-    customBannerField: 'banner',
-    customYPositionField: 'banner-y',
+    // Update these fields to be arrays
+    customBannerField: ['banner'],
+    customYPositionField: ['banner-y'],
+    customContentStartField: ['content-start'],
+    customImageDisplayField: ['banner-display'],
+    customImageRepeatField: ['banner-repeat'],
     folderImages: [],
     contentStartPosition: 150,
-    customContentStartField: 'content-start',
     imageDisplay: 'cover',
     imageRepeat: false,
-    customImageDisplayField: 'banner-display',
-    customImageRepeatField: 'banner-repeat',
 };
 
 class FolderSuggestModal extends FuzzySuggestModal {
@@ -207,6 +208,80 @@ class FolderImageSetting extends Setting {
             deleteButton.style.color = '';
         });
     }
+}
+
+// Helper functions (move outside the class)
+function arrayToString(arr) {
+    return Array.isArray(arr) ? arr.join(', ') : arr;
+}
+
+function stringToArray(str) {
+    return str.split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+}
+
+function validateFieldNames(settings, allFields, currentField, newNames) {
+    // Check for valid characters in field names (alphanumeric, dashes, underscores only)
+    const validNamePattern = /^[a-zA-Z0-9_-]+$/;
+    const invalidNames = newNames.filter(name => !validNamePattern.test(name));
+    if (invalidNames.length > 0) {
+        return {
+            isValid: false,
+            message: `Invalid characters in field names (only letters, numbers, dashes, and underscores allowed): ${invalidNames.join(', ')}`
+        };
+    }
+
+    // Then check for duplicates
+    const otherFields = allFields.filter(f => f !== currentField);
+    const otherFieldNames = otherFields.flatMap(f => settings[f]);
+    const duplicates = newNames.filter(name => otherFieldNames.includes(name));
+    
+    if (duplicates.length > 0) {
+        return {
+            isValid: false,
+            message: `Duplicate field names found: ${duplicates.join(', ')}`
+        };
+    }
+    
+    return { isValid: true };
+}
+
+function migrateSettings(settings) {
+    const fieldsToMigrate = [
+        'customBannerField',
+        'customYPositionField',
+        'customContentStartField',
+        'customImageDisplayField',
+        'customImageRepeatField'
+    ];
+
+    fieldsToMigrate.forEach(field => {
+        if (typeof settings[field] === 'string') {
+            settings[field] = [settings[field]];
+        }
+    });
+
+    return settings;
+}
+
+class PixelBannerPlugin extends Plugin {
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = migrateSettings(this.settings);
+        
+        if (!Array.isArray(this.settings.folderImages)) {
+            this.settings.folderImages = [];
+        }
+
+        if (this.settings.folderImages) {
+            this.settings.folderImages.forEach(folderImage => {
+                folderImage.imageDisplay = folderImage.imageDisplay || 'cover';
+                folderImage.imageRepeat = folderImage.imageRepeat || false;
+            });
+        }
+    }
+    // ... rest of the plugin class
 }
 
 class PixelBannerSettingTab extends PluginSettingTab {
@@ -490,7 +565,7 @@ class PixelBannerSettingTab extends PluginSettingTab {
     createCustomFieldsSettings(containerEl) {
         // section callout
         const calloutEl = containerEl.createEl('div', { cls: 'callout' });
-        calloutEl.createEl('p', { text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.' });
+        calloutEl.createEl('p', { text: 'Customize the frontmatter field names used for the banner and Y-position. You can define multiple names for each field, separated by commas. Field names can only contain letters, numbers, dashes, and underscores. Example: "banner, pixel-banner, header_image" could all be used as the banner field name.' });
         calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
         calloutEl.style.border = '1px solid var(--background-modifier-border)';
         calloutEl.style.color = 'var(--text-accent)';
@@ -499,144 +574,75 @@ class PixelBannerSettingTab extends PluginSettingTab {
         calloutEl.style.padding = '0 25px';
         calloutEl.style.marginBottom = '20px';
 
-        new Setting(containerEl)
-            .setName('Banner Field Name')
-            .setDesc('Set a custom field name for the banner in frontmatter')
-            .addText(text => {
-                text
-                    .setPlaceholder('pixel-banner')
-                    .setValue(this.plugin.settings.customBannerField)
-                    .onChange(async (value) => {
-                        if (this.validateFieldName(value, this.plugin.settings.customYPositionField) && 
-                            this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
-                            this.plugin.settings.customBannerField = value;
-                            await this.plugin.saveSettings();
-                        } else {
-                            text.setValue(this.plugin.settings.customBannerField);
-                        }
-                    });
-                text.inputEl.style.width = '220px';
-            })
-            .addExtraButton(button => button
-                .setIcon('reset')
-                .setTooltip('Reset to default')
-                .onClick(async () => {
-                    this.plugin.settings.customBannerField = DEFAULT_SETTINGS.customBannerField;
-                    await this.plugin.saveSettings();
-                    this.display();
-                }));
+        const customFields = [
+            {
+                setting: 'customBannerField',
+                name: 'Banner Field Names',
+                desc: 'Set custom field names for the banner in frontmatter (comma-separated)',
+                placeholder: 'banner, pixel-banner, header-image'
+            },
+            {
+                setting: 'customYPositionField',
+                name: 'Y-Position Field Names',
+                desc: 'Set custom field names for the Y-position in frontmatter (comma-separated)',
+                placeholder: 'banner-y, y-position, banner-offset'
+            },
+            {
+                setting: 'customContentStartField',
+                name: 'Content Start Position Field Names',
+                desc: 'Set custom field names for the content start position in frontmatter (comma-separated)',
+                placeholder: 'content-start, start-position, content-offset'
+            },
+            {
+                setting: 'customImageDisplayField',
+                name: 'Image Display Field Names',
+                desc: 'Set custom field names for the image display in frontmatter (comma-separated)',
+                placeholder: 'banner-display, image-display, display-mode'
+            },
+            {
+                setting: 'customImageRepeatField',
+                name: 'Image Repeat Field Names',
+                desc: 'Set custom field names for the image repeat in frontmatter (comma-separated)',
+                placeholder: 'banner-repeat, image-repeat, repeat-image'
+            }
+        ];
 
-        new Setting(containerEl)
-            .setName('Y-Position Field Name')
-            .setDesc('Set a custom field name for the Y-position in frontmatter')
-            .addText(text => {
-                text
-                    .setPlaceholder('pixel-banner-y-position')
-                    .setValue(this.plugin.settings.customYPositionField)
-                    .onChange(async (value) => {
-                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
-                            this.plugin.settings.customYPositionField = value;
-                            await this.plugin.saveSettings();
-                        } else {
-                            text.setValue(this.plugin.settings.customYPositionField);
-                        }
-                    });
-                text.inputEl.style.width = '220px';
-            })
-            .addExtraButton(button => button
-                .setIcon('reset')
-                .setTooltip('Reset to default')
-                .onClick(async () => {
-                    this.plugin.settings.customYPositionField = DEFAULT_SETTINGS.customYPositionField;
-                    await this.plugin.saveSettings();
-                    this.display();
-                }));
+        customFields.forEach(field => {
+            new Setting(containerEl)
+                .setName(field.name)
+                .setDesc(field.desc)
+                .addText(text => {
+                    text
+                        .setPlaceholder(field.placeholder)
+                        .setValue(arrayToString(this.plugin.settings[field.setting]))
+                        .onChange(async (value) => {
+                            const newNames = stringToArray(value);
+                            const validation = validateFieldNames(
+                                this.plugin.settings,
+                                customFields.map(f => f.setting),
+                                field.setting,
+                                newNames
+                            );
 
-        new Setting(containerEl)
-            .setName('Content Start Position Field Name')
-            .setDesc('Set a custom field name for the content start position in frontmatter')
-            .addText(text => {
-                text
-                    .setPlaceholder('pixel-banner-content-start')
-                    .setValue(this.plugin.settings.customContentStartField)
-                    .onChange(async (value) => {
-                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            this.validateFieldName(value, this.plugin.settings.customYPositionField)) {
-                            this.plugin.settings.customContentStartField = value;
-                            await this.plugin.saveSettings();
-                        } else {
-                            text.setValue(this.plugin.settings.customContentStartField);
-                        }
-                    });
-                text.inputEl.style.width = '220px';
-            })
-            .addExtraButton(button => button
-                .setIcon('reset')
-                .setTooltip('Reset to default')
-                .onClick(async () => {
-                    this.plugin.settings.customContentStartField = DEFAULT_SETTINGS.customContentStartField;
-                    await this.plugin.saveSettings();
-                    this.display();
-                }));
-
-        new Setting(containerEl)
-            .setName('Image Display Field Name')
-            .setDesc('Set a custom field name for the image display in frontmatter')
-            .addText(text => {
-                text
-                    .setPlaceholder('banner-display')
-                    .setValue(this.plugin.settings.customImageDisplayField)
-                    .onChange(async (value) => {
-                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            this.validateFieldName(value, this.plugin.settings.customYPositionField) &&
-                            this.validateFieldName(value, this.plugin.settings.customContentStartField) &&
-                            this.validateFieldName(value, this.plugin.settings.customImageRepeatField)) {
-                            this.plugin.settings.customImageDisplayField = value;
-                            await this.plugin.saveSettings();
-                        } else {
-                            text.setValue(this.plugin.settings.customImageDisplayField);
-                        }
-                    });
-                text.inputEl.style.width = '220px';
-            })
-            .addExtraButton(button => button
-                .setIcon('reset')
-                .setTooltip('Reset to default')
-                .onClick(async () => {
-                    this.plugin.settings.customImageDisplayField = DEFAULT_SETTINGS.customImageDisplayField;
-                    await this.plugin.saveSettings();
-                    this.display();
-                }));
-
-        new Setting(containerEl)
-            .setName('Image Repeat Field Name')
-            .setDesc('Set a custom field name for the image repeat in frontmatter')
-            .addText(text => {
-                text
-                    .setPlaceholder('banner-repeat')
-                    .setValue(this.plugin.settings.customImageRepeatField)
-                    .onChange(async (value) => {
-                        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && 
-                            this.validateFieldName(value, this.plugin.settings.customYPositionField) &&
-                            this.validateFieldName(value, this.plugin.settings.customContentStartField) &&
-                            this.validateFieldName(value, this.plugin.settings.customImageDisplayField)) {
-                            this.plugin.settings.customImageRepeatField = value;
-                            await this.plugin.saveSettings();
-                        } else {
-                            text.setValue(this.plugin.settings.customImageRepeatField);
-                        }
-                    });
-                text.inputEl.style.width = '220px';
-            })
-            .addExtraButton(button => button
-                .setIcon('reset')
-                .setTooltip('Reset to default')
-                .onClick(async () => {
-                    this.plugin.settings.customImageRepeatField = DEFAULT_SETTINGS.customImageRepeatField;
-                    await this.plugin.saveSettings();
-                    this.display();
-                }));
+                            if (validation.isValid) {
+                                this.plugin.settings[field.setting] = newNames;
+                                await this.plugin.saveSettings();
+                            } else {
+                                new Notice(validation.message);
+                                text.setValue(arrayToString(this.plugin.settings[field.setting]));
+                            }
+                        });
+                    text.inputEl.style.width = '220px';
+                })
+                .addExtraButton(button => button
+                    .setIcon('reset')
+                    .setTooltip('Reset to default')
+                    .onClick(async () => {
+                        this.plugin.settings[field.setting] = DEFAULT_SETTINGS[field.setting];
+                        await this.plugin.saveSettings();
+                        this.display();
+                    }));
+        });
     }
 
     createFolderSettings(containerEl) {
@@ -678,41 +684,47 @@ class PixelBannerSettingTab extends PluginSettingTab {
             .setName('How to use')
             .setHeading();
 
+        // Helper function to get a random item from an array
+        const getRandomFieldName = (fieldNames) => {
+            const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+            return names[Math.floor(Math.random() * names.length)];
+        };
+
         const instructionsEl = containerEl.createEl('div', { cls: 'pixel-banner-section' });
         instructionsEl.createEl('p', { text: 'Add the following fields to your note\'s frontmatter to customize the banner:' });
         const codeEl = instructionsEl.createEl('pre');
         codeEl.createEl('code', { text: 
 `---
-${this.plugin.settings.customBannerField}: blue turtle
-${this.plugin.settings.customYPositionField}: 30
-${this.plugin.settings.customContentStartField}: 200
-${this.plugin.settings.customImageDisplayField}: contain
-${this.plugin.settings.customImageRepeatField}: true
+${getRandomFieldName(this.plugin.settings.customBannerField)}: blue turtle
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 30
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 200
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
+${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: true
 ---
 
 # Or use a direct URL:
 ---
-${this.plugin.settings.customBannerField}: https://example.com/image.jpg
-${this.plugin.settings.customYPositionField}: 70
-${this.plugin.settings.customContentStartField}: 180
-${this.plugin.settings.customImageDisplayField}: cover
+${getRandomFieldName(this.plugin.settings.customBannerField)}: https://example.com/image.jpg
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 70
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 180
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: cover
 ---
 
 # Or use a path to an image in the vault:
 ---
-${this.plugin.settings.customBannerField}: Assets/my-image.png
-${this.plugin.settings.customYPositionField}: 0
-${this.plugin.settings.customContentStartField}: 100
-${this.plugin.settings.customImageDisplayField}: auto
+${getRandomFieldName(this.plugin.settings.customBannerField)}: Assets/my-image.png
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 0
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 100
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: auto
 ---
 
 # Or use an Obsidian internal link:
 ---
-${this.plugin.settings.customBannerField}: [[example-image.png]]
-${this.plugin.settings.customYPositionField}: 100
-${this.plugin.settings.customContentStartField}: 50
-${this.plugin.settings.customImageDisplayField}: contain
-${this.plugin.settings.customImageRepeatField}: false
+${getRandomFieldName(this.plugin.settings.customBannerField)}: [[example-image.png]]
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 100
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 50
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
+${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: false
 ---`
         });
 
