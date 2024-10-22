@@ -162,6 +162,8 @@ content-start: 200
 
 ![settings-4](img/settings-4.jpg)
 
+![settings-4](img/settings-5.jpg)
+
 ## Feedback and Support
 
 If you encounter any issues or have suggestions for improvements, please [open an issue](https://github.com/jparkerweb/pixel-banner/issues) on the GitHub repository.
