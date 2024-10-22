@@ -213,19 +213,40 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     return { tabsEl, tabContentContainer };
   }
   createAPISettings(containerEl) {
+    const calloutEl = containerEl.createEl("div", { cls: "callout" });
+    calloutEl.createEl("p", { text: "Optionally select which API provider to use for fetching images. See the Examples tab for more information on referencing images by URL or local image. You can use any combination of API keyword, URL, or local image between notes." });
+    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
+    calloutEl.style.border = "1px solid var(--background-modifier-border)";
+    calloutEl.style.color = "var(--text-accent)";
+    calloutEl.style.fontSize = "0.9em";
+    calloutEl.style.borderRadius = "5px";
+    calloutEl.style.padding = "0 25px";
+    calloutEl.style.marginBottom = "20px";
     new import_obsidian.Setting(containerEl).setName("API Provider").setDesc("Select the API provider for fetching images").addDropdown((dropdown) => dropdown.addOption("pexels", "Pexels").addOption("pixabay", "Pixabay").setValue(this.plugin.settings.apiProvider).onChange(async (value) => {
       this.plugin.settings.apiProvider = value;
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Pexels API Key").setDesc("Enter your Pexels API key").addText((text) => text.setPlaceholder("Enter your Pexels API key").setValue(this.plugin.settings.pexelsApiKey).onChange(async (value) => {
-      this.plugin.settings.pexelsApiKey = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Pixabay API Key").setDesc("Enter your Pixabay API key").addText((text) => text.setPlaceholder("Enter your Pixabay API key").setValue(this.plugin.settings.pixabayApiKey).onChange(async (value) => {
-      this.plugin.settings.pixabayApiKey = value;
-      await this.plugin.saveSettings();
-    }));
+    new import_obsidian.Setting(containerEl).setName("Pexels API Key");
+    containerEl.createEl("span", { text: "Enter your Pexels API key. Get your API key from ", cls: "setting-item-description" }).createEl("a", { href: "https://www.pexels.com/api/", text: "Pexels API" });
+    const pexelsApiKeySetting = new import_obsidian.Setting(containerEl).addText((text) => {
+      text.setPlaceholder("Pexels API key").setValue(this.plugin.settings.pexelsApiKey).onChange(async (value) => {
+        this.plugin.settings.pexelsApiKey = value;
+        await this.plugin.saveSettings();
+      });
+      text.inputEl.style.width = "100%";
+    });
+    pexelsApiKeySetting.settingEl.addClass("full-width-control");
+    new import_obsidian.Setting(containerEl).setName("Pixabay API Key");
+    containerEl.createEl("span", { text: "Enter your Pixabay API key. Get your API key from ", cls: "setting-item-description" }).createEl("a", { href: "https://pixabay.com/api/docs/", text: "Pixabay API" });
+    const pixabayApiKeySetting = new import_obsidian.Setting(containerEl).addText((text) => {
+      text.setPlaceholder("Pixabay API key").setValue(this.plugin.settings.pixabayApiKey).onChange(async (value) => {
+        this.plugin.settings.pixabayApiKey = value;
+        await this.plugin.saveSettings();
+      });
+      text.inputEl.style.width = "100%";
+    });
+    pixabayApiKeySetting.settingEl.addClass("full-width-control");
     new import_obsidian.Setting(containerEl).setName("Images").setDesc("Configure settings for images fetched from API. These settings apply when using keywords to fetch random images.").setHeading();
     new import_obsidian.Setting(containerEl).setName("Size").setDesc("Select the size of the image - (API only)").addDropdown((dropdown) => dropdown.addOption("small", "Small").addOption("medium", "Medium").addOption("large", "Large").setValue(this.plugin.settings.imageSize).onChange(async (value) => {
       this.plugin.settings.imageSize = value;
@@ -269,6 +290,15 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     defaultKeywordsSetting.settingEl.style.flexDirection = "column";
   }
   createGeneralSettings(containerEl) {
+    const calloutEl = containerEl.createEl("div", { cls: "callout" });
+    calloutEl.createEl("p", { text: "Set the default vertical position of the image, how it should be displayed, and where the content should start. These are global settings and apply to all notes with banners unless overridden by folder or note-specific settings." });
+    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
+    calloutEl.style.border = "1px solid var(--background-modifier-border)";
+    calloutEl.style.color = "var(--text-accent)";
+    calloutEl.style.fontSize = "0.9em";
+    calloutEl.style.borderRadius = "5px";
+    calloutEl.style.padding = "0 25px";
+    calloutEl.style.marginBottom = "20px";
     new import_obsidian.Setting(containerEl).setName("Image Vertical Position").setDesc("Set the vertical position of the image (0-100)").addSlider(
       (slider) => slider.setLimits(0, 100, 1).setValue(this.plugin.settings.yPosition).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.yPosition = value;

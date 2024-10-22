@@ -270,6 +270,17 @@ class PixelBannerSettingTab extends PluginSettingTab {
     }
 
     createAPISettings(containerEl) {
+        // section callout
+        const calloutEl = containerEl.createEl('div', { cls: 'callout' });
+        calloutEl.createEl('p', { text: 'Optionally select which API provider to use for fetching images. See the Examples tab for more information on referencing images by URL or local image. You can use any combination of API keyword, URL, or local image between notes.' });
+        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
+        calloutEl.style.border = '1px solid var(--background-modifier-border)';
+        calloutEl.style.color = 'var(--text-accent)';
+        calloutEl.style.fontSize = '0.9em';
+        calloutEl.style.borderRadius = '5px';
+        calloutEl.style.padding = '0 25px';
+        calloutEl.style.marginBottom = '20px';
+
         // Add API provider radio buttons
         new Setting(containerEl)
             .setName('API Provider')
@@ -286,27 +297,39 @@ class PixelBannerSettingTab extends PluginSettingTab {
 
         // Pexels API key
         new Setting(containerEl)
-            .setName('Pexels API Key')
-            .setDesc('Enter your Pexels API key')
-            .addText(text => text
-                .setPlaceholder('Enter your Pexels API key')
-                .setValue(this.plugin.settings.pexelsApiKey)
-                .onChange(async (value) => {
-                    this.plugin.settings.pexelsApiKey = value;
-                    await this.plugin.saveSettings();
-                }));
+            .setName('Pexels API Key');
+        containerEl.createEl('span', { text: 'Enter your Pexels API key. Get your API key from ', cls: 'setting-item-description' })
+            .createEl('a', { href: 'https://www.pexels.com/api/', text: 'Pexels API' });
+        const pexelsApiKeySetting = new Setting(containerEl)
+            .addText(text => {
+                text
+                    .setPlaceholder('Pexels API key')
+                    .setValue(this.plugin.settings.pexelsApiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pexelsApiKey = value;
+                        await this.plugin.saveSettings();
+                    });
+                text.inputEl.style.width = '100%';
+            });
+        pexelsApiKeySetting.settingEl.addClass('full-width-control');
 
         // Pixabay API key
         new Setting(containerEl)
-            .setName('Pixabay API Key')
-            .setDesc('Enter your Pixabay API key')
-            .addText(text => text
-                .setPlaceholder('Enter your Pixabay API key')
-                .setValue(this.plugin.settings.pixabayApiKey)
-                .onChange(async (value) => {
-                    this.plugin.settings.pixabayApiKey = value;
-                    await this.plugin.saveSettings();
-                }));
+            .setName('Pixabay API Key');
+        containerEl.createEl('span', { text: 'Enter your Pixabay API key. Get your API key from ', cls: 'setting-item-description' })
+            .createEl('a', { href: 'https://pixabay.com/api/docs/', text: 'Pixabay API' });
+        const pixabayApiKeySetting = new Setting(containerEl)
+            .addText(text => {
+                text
+                    .setPlaceholder('Pixabay API key')
+                    .setValue(this.plugin.settings.pixabayApiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.pixabayApiKey = value;
+                        await this.plugin.saveSettings();
+                    });
+                text.inputEl.style.width = '100%';
+            });
+        pixabayApiKeySetting.settingEl.addClass('full-width-control');
 
         new Setting(containerEl)
             .setName('Images')
@@ -392,6 +415,17 @@ class PixelBannerSettingTab extends PluginSettingTab {
     }
 
     createGeneralSettings(containerEl) {
+        // section callout
+        const calloutEl = containerEl.createEl('div', { cls: 'callout' });
+        calloutEl.createEl('p', { text: 'Set the default vertical position of the image, how it should be displayed, and where the content should start. These are global settings and apply to all notes with banners unless overridden by folder or note-specific settings.' });
+        calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
+        calloutEl.style.border = '1px solid var(--background-modifier-border)';
+        calloutEl.style.color = 'var(--text-accent)';
+        calloutEl.style.fontSize = '0.9em';
+        calloutEl.style.borderRadius = '5px';
+        calloutEl.style.padding = '0 25px';
+        calloutEl.style.marginBottom = '20px';
+
         new Setting(containerEl)
             .setName('Image Vertical Position')
             .setDesc('Set the vertical position of the image (0-100)')
@@ -454,7 +488,7 @@ class PixelBannerSettingTab extends PluginSettingTab {
     }
 
     createCustomFieldsSettings(containerEl) {
-        // Add this callout at the beginning of the method
+        // section callout
         const calloutEl = containerEl.createEl('div', { cls: 'callout' });
         calloutEl.createEl('p', { text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes.' });
         calloutEl.style.backgroundColor = 'var(--background-primary-alt)';
@@ -606,7 +640,7 @@ class PixelBannerSettingTab extends PluginSettingTab {
     }
 
     createFolderSettings(containerEl) {
-        // Add this callout at the beginning of the method
+        // section callout
         const calloutEl = containerEl.createEl('div', { cls: 'callout' });
         calloutEl.createEl('p', { text: 'Set default banner images for specific folders. These will apply to all notes in the folder unless overridden by note-specific settings.' });
         calloutEl.style.backgroundColor = 'var(--background-primary-alt)';

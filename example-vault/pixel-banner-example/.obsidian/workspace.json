@@ -20,8 +20,23 @@
               "icon": "lucide-file",
               "title": "🚩 Pixel-Banner"
             }
+          },
+          {
+            "id": "688a4bb7d377348f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "🚩 Pixel-Banner.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "🚩 Pixel-Banner"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -162,17 +177,18 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "94198b78c3ac6720",
+  "active": "688a4bb7d377348f",
   "lastOpenFiles": [
-    "embeds/📜 Embedded Note with Banner.md",
     "embeds/📃 Embedded Note.md",
+    "test.md",
+    "embeds/📜 Embedded Note with Banner.md",
+    "🚩 Pixel-Banner.md",
     "banners/jp-cover4a.jpg",
     "banners/jp-cover4.jpg",
     "banners/jp-cover3a.jpg",
     "banners/jp-cover3.jpg",
     "banners/jp-cover2.jpg",
     "banners/jp-cover.jpg",
-    "🚩 Pixel-Banner.md",
     "bay.md",
     "🚩 Pexels-Banner.md",
     "Clippings/Official Obsidian web clipper now available!  rObsidianMD.md",
