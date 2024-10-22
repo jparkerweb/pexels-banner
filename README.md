@@ -108,19 +108,25 @@ The global y-position can be overridden on a per-note basis using the `banner-y`
 
 ### Custom Field Names
 
-You can customize the frontmatter field names used for the banner and Y-position:
+You can customize the frontmatter field names used for each setting, and even define multiple names for each field:
 
 1. Go to Settings > Pixel Banner
 2. Scroll down to the "Custom Field Names" section
-3. Enter your preferred field names for the banner and Y-position
-4. Use these custom field names in your frontmatter instead of the default ones
+3. Enter your preferred field names for each setting, separated by commas
+4. Use any of the defined field names in your frontmatter
 
-For example, if you set the custom banner field name to "my-banner" and the custom Y-position field name to "my-y-pos", your frontmatter would look like this:
+Field names must follow these rules:
+- Only letters, numbers, dashes, and underscores are allowed
+- No spaces within field names (spaces after commas are fine)
+- Names must be unique across all fields
+
+For example, if you set the banner field names to "banner, header-image, cover" and the Y-position field names to "banner-y, y-pos", you could use any 
+of these variations in your frontmatter:
 
 ```yaml
 ---
-my-banner: sunset
-my-y-pos: 60
+header-image: sunset
+banner-y: 60
 ---
 ```
 

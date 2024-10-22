@@ -2,6 +2,21 @@
 
 All notable changes to the Pixel Banner plugin will be documented in this file.
 
+## [2.1.0] - 2024-10-22
+
+### Added
+- Multiple custom field names: Users can now define multiple names for each frontmatter field
+- Comma-separated field name definitions in settings
+- Validation to prevent duplicate field names across all settings
+- Validation to prevent spaces within individual field names
+- Enhanced settings UI with clearer instructions for multiple field names
+- Updated examples in the settings tab to randomly showcase different field name options
+
+### Changed
+- Custom field names are now stored as arrays instead of single strings
+- Improved validation feedback when entering invalid field names
+- Updated documentation to reflect multiple field name support
+
 ## [2.0.0] - 2024-10-21
 
 ### Added
