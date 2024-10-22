@@ -115,7 +115,13 @@ You can customize the frontmatter field names used for each setting, and even de
 3. Enter your preferred field names for each setting, separated by commas
 4. Use any of the defined field names in your frontmatter
 
-For example, if you set the banner field names to "banner, header-image, cover" and the Y-position field names to "banner-y, y-pos", you could use any of these variations in your frontmatter:
+Field names must follow these rules:
+- Only letters, numbers, dashes, and underscores are allowed
+- No spaces within field names (spaces after commas are fine)
+- Names must be unique across all fields
+
+For example, if you set the banner field names to "banner, header-image, cover" and the Y-position field names to "banner-y, y-pos", you could use any 
+of these variations in your frontmatter:
 
 ```yaml
 ---

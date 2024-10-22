@@ -183,11 +183,12 @@ function stringToArray(str) {
   return str.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
 }
 function validateFieldNames(settings, allFields, currentField, newNames) {
-  const invalidNames = newNames.filter((name) => name.includes(" "));
+  const validNamePattern = /^[a-zA-Z0-9_-]+$/;
+  const invalidNames = newNames.filter((name) => !validNamePattern.test(name));
   if (invalidNames.length > 0) {
     return {
       isValid: false,
-      message: `Invalid field names (spaces not allowed within names): ${invalidNames.join(", ")}`
+      message: `Invalid characters in field names (only letters, numbers, dashes, and underscores allowed): ${invalidNames.join(", ")}`
     };
   }
   const otherFields = allFields.filter((f) => f !== currentField);
@@ -358,7 +359,7 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   }
   createCustomFieldsSettings(containerEl) {
     const calloutEl = containerEl.createEl("div", { cls: "callout" });
-    calloutEl.createEl("p", { text: 'Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes. Each field name must be unique, however, you can define multiple names for each field seperated by commas. Example: "banner, pixel-banner, header-image" could all be used as the banner field name.' });
+    calloutEl.createEl("p", { text: 'Customize the frontmatter field names used for the banner and Y-position. You can define multiple names for each field, separated by commas. Field names can only contain letters, numbers, dashes, and underscores. Example: "banner, pixel-banner, header_image" could all be used as the banner field name.' });
     calloutEl.style.backgroundColor = "var(--background-primary-alt)";
     calloutEl.style.border = "1px solid var(--background-modifier-border)";
     calloutEl.style.color = "var(--text-accent)";
