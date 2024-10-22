@@ -1,6 +1,6 @@
 ---
 banner: "[[jp-cover4.jpg]]"
-banner-y: 30
+banner-y: 10
 content-start: "200"
 ---
   # 🚩 Pixel-Banner Example Vault
