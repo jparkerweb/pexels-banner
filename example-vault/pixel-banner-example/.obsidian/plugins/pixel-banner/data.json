@@ -25,7 +25,23 @@
   "customImageRepeatField": [
     "banner-repeat"
   ],
-  "folderImages": [],
+  "folderImages": [
+    {
+      "folder": "notes/llama-notes",
+      "image": "[[llamas.jpg]]",
+      "yPosition": 50,
+      "contentStartPosition": 170,
+      "imageDisplay": "contain",
+      "imageRepeat": true,
+      "bannerHeight": 200
+    },
+    {
+      "folder": "notes",
+      "image": "images/jp-cover2.jpg",
+      "yPosition": 50,
+      "contentStartPosition": 150
+    }
+  ],
   "contentStartPosition": 150,
   "imageDisplay": "cover",
   "imageRepeat": false,

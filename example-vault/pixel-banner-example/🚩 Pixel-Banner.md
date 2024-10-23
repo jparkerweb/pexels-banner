@@ -10,6 +10,8 @@ banner: "[[forest.jpg]]"
 ---
 ### *Embedded Notes*
 
+![[llamas]]
+
 ![[📜 Embedded Note with Banner]]
 
 ![[📃 Embedded Note]]

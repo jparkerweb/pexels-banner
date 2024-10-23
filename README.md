@@ -14,6 +14,8 @@ Pixel Banner is a plugin for Obsidian that allows you to automatically add beaut
 - Customize image size and orientation
 - Set default keywords for when no specific keyword is provided
 - Adjust vertical position of the banner image globally, per folder, or per note
+- Customize banner height (100-2500 pixels)
+- Control fade transparency (-1500 to 100)
 - Customize frontmatter field names
 - Set a custom start position for the content below the banner image
 - Set the banner image display to cover or contain and adjust wrapping
@@ -38,47 +40,44 @@ Pixel Banner is a plugin for Obsidian that allows you to automatically add beaut
 ```yaml
 ---
 banner: blue turtle
+banner-y: 30
+content-start: 90
+banner-height: 350
+banner-fade: -75
 ---
 
 # Or use a direct URL:
 
 ---
 banner: https://example.com/image.jpg
+banner-height: 400
+banner-fade: -150
 ---
 
 # Or use a local image:
 
 ---
 banner: /path/to/local/image.jpg
+banner-height: 300
+banner-fade: 0
 ---
 
 # Or use an Obsidian internal link:
 
 ---
 banner: [[path/to/internal/image.jpg]]
+banner-height: 250
+banner-fade: -200
 ---
 
-# Specify a custom y-position for the image (0-100) and content start position (in pixels):
-
----
-banner: nature
-banner-y: 30
-content-start: 90
----
-
-# Specify a custom field name for the banner and y-position:
-
----
-my-banner: sunset
-my-y-pos: 60
----
-
-# Specify a custom display mode (cover or contain) and repeat (true or false):
+# Customize display and repeat settings:
 
 ---
 banner: ocean
 banner-display: cover
 banner-repeat: true
+banner-height: 500
+banner-fade: -100
 ---
 ```
 
@@ -89,7 +88,13 @@ You can set default banner images for entire folders:
 1. Go to Settings > Pixel Banner
 2. Scroll down to the "Folder Images" section
 3. Click "Add Folder Image"
-4. Enter the folder path, image URL or keyword, and Y-position
+4. Configure the folder settings:
+   - Folder path
+   - Image URL or keyword
+   - Y-position (0-100)
+   - Banner height (100-2500 pixels)
+   - Fade effect (-1500 to 100)
+   - Display mode and repeat settings
 5. Repeat for additional folders as needed
 
 Folder-specific settings will apply to all notes in that folder (and subfolders) that don't have their own banner specified in the frontmatter.
@@ -103,52 +108,40 @@ In the plugin settings, you can customize:
 - Number of images to fetch (1-50)
 - Default keywords for when no specific keyword is provided
 - Global y-position of the banner image (0-100)
-- Custom field names for banner and Y-position in frontmatter
+- Global banner height (100-2500 pixels, default 350)
+- Global fade effect (-1500 to 100, default -75)
+- Custom field names for all settings
 - Folder-specific default banner images
 
-The global y-position can be overridden on a per-note basis using the `banner-y` frontmatter field (or your custom field name).
+All global settings can be overridden on a per-folder or per-note basis.
 
 ### Custom Field Names
 
-You can customize the frontmatter field names used for each setting, and even define multiple names for each field:
-
-1. Go to Settings > Pixel Banner
-2. Scroll down to the "Custom Field Names" section
-3. Enter your preferred field names for each setting, separated by commas
-4. Use any of the defined field names in your frontmatter
-
-Field names must follow these rules:
-- Only letters, numbers, dashes, and underscores are allowed
-- No spaces within field names (spaces after commas are fine)
-- Names must be unique across all fields
-
-For example, if you set the banner field names to "banner, header-image, cover" and the Y-position field names to "banner-y, y-pos", you could use any 
+You can customize the frontmatter field names used for each setting, and even define multiple names for each field. For example, if you set the banner field names to "banner, header-image, cover" and 
+the Y-position field names to "banner-y, y-pos", you could use any 
 of these variations in your frontmatter:
 
 ```yaml
 ---
 header-image: sunset
+y-pos: 22
+---
+
+---
 banner-y: 60
+y-pos: 60
+---
+
+---
+header-image: sunset
+banner-y: 30
 ---
 ```
 
-### Content Start Position
-
-You can set a custom start position for the content below the banner image:
-
-1. Go to Settings > Pixel Banner
-2. Scroll down to the "Content Start Position" section
-3. Enter a value (in pixels) to adjust where the content starts below the banner
-4. This setting can be overridden on a per-note basis using the `content-start` frontmatter field
-
-For example, to set a custom start position in your frontmatter:
-
-```yaml
----
-banner: nature
-content-start: 200
----
-```
+Field names must follow these rules:
+- Only letters, numbers, dashes, and underscores are allowed
+- No spaces within field names (spaces after commas are fine)
+- Names must be unique across all fields
 
 ## Example Note Screenshot
 

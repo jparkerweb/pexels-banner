@@ -2,6 +2,25 @@
 
 All notable changes to the Pixel Banner plugin will be documented in this file.
 
+## [2.2.0] - 2024-10-23
+
+### Added
+- Banner Height: Customize the height of banner images (100-2500 pixels; default 350)
+  - Global default setting
+  - Folder-specific override
+  - Per-note override via frontmatter
+- Banner Fade Effect: Control the fade transparency (-1500 to 100)
+  - Global default setting
+  - Folder-specific override
+  - Per-note override via frontmatter
+- New custom field names for banner height and fade effect
+- Updated settings interface with slider controls for fade effect
+
+### Changed
+- Improved settings UI with better organization of controls
+- Enhanced visual feedback for settings changes
+- Updated examples to showcase new banner height and fade options
+
 ## [2.1.0] - 2024-10-22
 
 ### Added

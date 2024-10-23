@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "ff4437ecb3844096",
+        "id": "3762c4b43e9e5773",
         "type": "tabs",
         "children": [
           {
-            "id": "d1701e759ce6f32e",
+            "id": "86ba2e88cf39775f",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -163,11 +163,53 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "d1701e759ce6f32e",
+  "floating": {
+    "id": "6a61033fbf0ac54c",
+    "type": "floating",
+    "children": [
+      {
+        "id": "40a04a8278536fb3",
+        "type": "window",
+        "children": [
+          {
+            "id": "6c1171e1138ed899",
+            "type": "tabs",
+            "children": [
+              {
+                "id": "f603ebb21ca26992",
+                "type": "leaf",
+                "state": {
+                  "type": "markdown",
+                  "state": {
+                    "file": "notes/llama-notes/llamas.md",
+                    "mode": "preview",
+                    "source": true
+                  },
+                  "icon": "lucide-file",
+                  "title": "llamas"
+                }
+              }
+            ]
+          }
+        ],
+        "direction": "vertical",
+        "x": 2248,
+        "y": 118,
+        "width": 1024,
+        "height": 800,
+        "maximize": false,
+        "zoom": 0
+      }
+    ]
+  },
+  "active": "86ba2e88cf39775f",
   "lastOpenFiles": [
-    "notes/📃 Embedded Note.md",
-    "notes/📜 Embedded Note with Banner.md",
+    "notes/llama-notes/llamas.md",
     "🚩 Pixel-Banner.md",
+    "notes/📜 Embedded Note with Banner.md",
+    "notes/llama-notes",
+    "images/llamas.jpg",
+    "notes/📃 Embedded Note.md",
     "images/forest.jpg",
     "images/jp-cover4.jpg",
     "images/jp-cover.jpg",
@@ -183,7 +225,6 @@
     "Clippings",
     "embeds/📃 Embedded Note without Banner.md",
     "banners/turtle.jpg",
-    "banners/combine-scripts.jpg",
     "notes",
     "1b.md",
     "1a.md",
