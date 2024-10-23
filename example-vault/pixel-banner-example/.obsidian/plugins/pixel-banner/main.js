@@ -421,7 +421,11 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
         this.plugin.settings[field.setting] = DEFAULT_SETTINGS[field.setting];
         await this.plugin.saveSettings();
-        this.display();
+        const settingEl = button.extraSettingsEl.parentElement;
+        const textInput = settingEl.querySelector('input[type="text"]');
+        textInput.value = arrayToString(DEFAULT_SETTINGS[field.setting]);
+        const event = new Event("input", { bubbles: true, cancelable: true });
+        textInput.dispatchEvent(event);
       }));
     });
   }
@@ -729,11 +733,13 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       if (imageUrl) {
         bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
         bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
-        bannerDiv.style.backgroundSize = frontmatter[this.settings.customImageDisplayField] || this.getFolderSpecificSetting(file.path, "imageDisplay") || this.settings.imageDisplay || "cover";
-        if (bannerDiv.style.backgroundSize === "contain") {
-          bannerDiv.style.backgroundRepeat = (frontmatter[this.settings.customImageRepeatField] !== void 0 ? frontmatter[this.settings.customImageRepeatField] : this.getFolderSpecificSetting(file.path, "imageRepeat") !== void 0 ? this.getFolderSpecificSetting(file.path, "imageRepeat") : this.settings.imageRepeat) ? "repeat" : "no-repeat";
+        bannerDiv.style.backgroundSize = getFrontmatterValue(frontmatter, this.settings.customImageDisplayField) || this.getFolderSpecificSetting(file.path, "imageDisplay") || this.settings.imageDisplay || "cover";
+        const shouldRepeat = getFrontmatterValue(frontmatter, this.settings.customImageRepeatField);
+        if (shouldRepeat !== void 0) {
+          const repeatValue = String(shouldRepeat).toLowerCase() === "true";
+          bannerDiv.style.backgroundRepeat = repeatValue ? "repeat" : "no-repeat";
         } else {
-          bannerDiv.style.backgroundRepeat = "no-repeat";
+          bannerDiv.style.backgroundRepeat = bannerDiv.style.backgroundSize === "contain" && (this.getFolderSpecificSetting(file.path, "imageRepeat") || this.settings.imageRepeat) ? "repeat" : "no-repeat";
         }
         bannerDiv.style.display = "block";
       }
@@ -1024,7 +1030,11 @@ function getFrontmatterValue(frontmatter, fieldNames) {
   if (!frontmatter || !Array.isArray(fieldNames)) return void 0;
   for (const fieldName of fieldNames) {
     if (fieldName in frontmatter) {
-      return frontmatter[fieldName];
+      const value = frontmatter[fieldName];
+      if (typeof value === "string" && (value.toLowerCase() === "true" || value.toLowerCase() === "false")) {
+        return value.toLowerCase() === "true";
+      }
+      return value;
     }
   }
   return void 0;

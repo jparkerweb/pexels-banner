@@ -9,7 +9,7 @@
   "yPosition": 35,
   "customBannerField": [
     "banner",
-    "image"
+    "header-image"
   ],
   "customYPositionField": [
     "banner-y",
@@ -27,11 +27,11 @@
   ],
   "folderImages": [
     {
-      "folder": "embeds",
-      "image": "",
+      "folder": "notes",
+      "image": "images/jp-cover2.jpg",
       "yPosition": 78,
-      "contentStartPosition": 220,
-      "imageDisplay": "contain",
+      "contentStartPosition": 70,
+      "imageDisplay": "cover",
       "imageRepeat": true
     }
   ],
