@@ -2,6 +2,8 @@
 
 Pixel Banner is a plugin for Obsidian that allows you to automatically add beautiful banner images to your notes using the Pexels/Pixabay APIs, direct URLs, or folder-specific settings. Enhance your note-taking experience with visually appealing headers that provide context and improve the overall aesthetics of your notes.
 
+![pixel-banner](img/pixel-banner.jpg)
+
 ## Features
 
 - Automatically fetch and display banner images from Pexels/Pixabay based on keywords
