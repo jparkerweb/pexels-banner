@@ -707,11 +707,16 @@ class PixelBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.updateAllBanners();
 
-                    // Update the toggle value
-                    const toggleEl = button.extraSettingsEl.parentElement.querySelector('.checkbox-container input');
+                    // Update the toggle state
+                    const checkboxContainer = button.extraSettingsEl.parentElement.querySelector('.checkbox-container');
+                    const toggleEl = checkboxContainer.querySelector('input');
                     if (toggleEl) {
                         toggleEl.checked = DEFAULT_SETTINGS.imageRepeat;
-                        toggleEl.dispatchEvent(new Event('change'));
+                        // Update the container class
+                        checkboxContainer.classList.toggle('is-enabled', DEFAULT_SETTINGS.imageRepeat);
+                        // Trigger the change event to ensure the onChange handler runs
+                        const event = new Event('change', { bubbles: true });
+                        toggleEl.dispatchEvent(event);
                     }
                 }));
 
