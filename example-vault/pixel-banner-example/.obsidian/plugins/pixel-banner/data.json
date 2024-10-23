@@ -19,8 +19,12 @@
     "content-start",
     "start"
   ],
-  "customImageDisplayField": "banner-display",
-  "customImageRepeatField": "banner-repeat",
+  "customImageDisplayField": [
+    "banner-display"
+  ],
+  "customImageRepeatField": [
+    "banner-repeat"
+  ],
   "folderImages": [
     {
       "folder": "embeds",

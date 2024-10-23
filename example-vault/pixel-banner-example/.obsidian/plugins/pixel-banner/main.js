@@ -563,6 +563,7 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.migrateCustomFields();
     if (!Array.isArray(this.settings.folderImages)) {
       this.settings.folderImages = [];
     }
@@ -572,6 +573,25 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
         folderImage.imageRepeat = folderImage.imageRepeat || false;
       });
     }
+  }
+  migrateCustomFields() {
+    const fieldsToMigrate = [
+      "customBannerField",
+      "customYPositionField",
+      "customContentStartField",
+      "customImageDisplayField",
+      "customImageRepeatField"
+    ];
+    fieldsToMigrate.forEach((field) => {
+      if (typeof this.settings[field] === "string") {
+        console.log(`converting ${field} to array`);
+        this.settings[field] = [this.settings[field]];
+      } else if (!Array.isArray(this.settings[field])) {
+        console.log(`setting default value for ${field}`);
+        this.settings[field] = DEFAULT_SETTINGS[field];
+      }
+    });
+    this.saveSettings();
   }
   async saveSettings() {
     await this.saveData(this.settings);

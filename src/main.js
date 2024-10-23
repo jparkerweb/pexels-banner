@@ -42,6 +42,9 @@ module.exports = class PixelBannerPlugin extends Plugin {
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
         
+        // Migrate custom fields from string to array if necessary
+        this.migrateCustomFields();
+        
         // Ensure folderImages is always an array
         if (!Array.isArray(this.settings.folderImages)) {
             this.settings.folderImages = [];
@@ -53,6 +56,31 @@ module.exports = class PixelBannerPlugin extends Plugin {
                 folderImage.imageRepeat = folderImage.imageRepeat || false;
             });
         }
+    }
+
+    migrateCustomFields() {
+        // console.log('Migrating custom fields');
+        const fieldsToMigrate = [
+            'customBannerField',
+            'customYPositionField',
+            'customContentStartField',
+            'customImageDisplayField',
+            'customImageRepeatField'
+        ];
+
+        fieldsToMigrate.forEach(field => {
+            // console.log(`checking ${field}`);
+            if (typeof this.settings[field] === 'string') {
+                console.log(`converting ${field} to array`);
+                this.settings[field] = [this.settings[field]];
+            } else if (!Array.isArray(this.settings[field])) {
+                console.log(`setting default value for ${field}`);
+                this.settings[field] = DEFAULT_SETTINGS[field];
+            }
+        });
+
+        // Save the migrated settings
+        this.saveSettings();
     }
 
     async saveSettings() {
