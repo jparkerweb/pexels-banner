@@ -14,12 +14,12 @@
 	background-size: cover; 
 	background-position: 50% 50%;
 	overflow: hidden;  
-	mask-image: linear-gradient(to bottom,black -75%,transparent);
-	-webkit-mask-image: linear-gradient(to bottom,black -75%,transparent);
+	mask-image: linear-gradient(to bottom, black calc(100% + var(--pixel-banner-fade, -75%)), transparent);
+	-webkit-mask-image: linear-gradient(to bottom, black calc(100% + var(--pixel-banner-fade, -75%)), transparent);
 	height: var(--pixel-banner-height, 350px);
     border-radius: 17px !important;
 	pointer-events: none;
-	animation: pixel-banner-image--fade-in 0.4s ease-in-out;
+	animation: pixel-banner-image--fade-in 0.6s ease-in-out;
 	will-change: opacity;
 	transform: translateZ(0);
 	background-repeat: no-repeat;
@@ -126,6 +126,7 @@
 }
 
 .setting-item.folder-image-setting {
+    position: relative;
 	flex-wrap: wrap;
 	justify-content: flex-start;
     border: 1px solid var(--slider-track-background);
@@ -133,6 +134,14 @@
     padding: 20px;
     margin: 20px 0;
 }
+.setting-item.folder-image-setting .folder-image-delete-container {
+    position: absolute;
+    top: 10px;
+    right: 0;
+}
+
+
+
 .setting-item.folder-image-setting > .folder-input-container,
 .setting-item.folder-image-setting > .display-and-repeat-container {
 	display: flex;
@@ -163,6 +172,16 @@
     background-color: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 5px;
+}
+
+.pixel-banner-settings .slider-container {
+    display: flex;
+    align-items: center;
+}
+
+.pixel-banner-settings.slider-value {
+    min-width: 30px;
+    text-align: right;
 }
 
 .pixel-banner-settings .setting-item-description {
@@ -201,16 +220,23 @@
     display: block;
 }
 
-
-/* spacing class */
-.pixel-banner-spacing {
-    height: 20px;
-}
-
-/* utility classes */
-.flex-column {
+.pixel-banner-settings-tabs .folder-image-setting .slider-container {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
 }
+
+.pixel-banner-settings-tabs .folder-image-setting .slider-value {
+    min-width: 30px;
+    text-align: right;
+}
+
+.folder-images-container .setting-item-name__label {
+    display: flex;
+    align-items: center;
+}
+
+.folder-images-container .full-width-control {
+    width: 100%;
+}
+
+.setting-item.folder-image-setting > div { min-height: 50px; }

@@ -274,6 +274,15 @@ module.exports = class PixelBannerPlugin extends Plugin {
                     350;
                 bannerDiv.style.setProperty('--pixel-banner-height', `${bannerHeight}px`);
 
+                // Set the fade effect
+                const fadeValue = getFrontmatterValue(frontmatter, this.settings.customFadeField) ??
+                    this.getFolderSpecificSetting(file.path, 'fade') ??
+                    this.settings.fade ??
+                    -75;
+                
+                // Apply the fade value directly as a percentage
+                bannerDiv.style.setProperty('--pixel-banner-fade', `${fadeValue}%`);
+
                 bannerDiv.style.display = 'block';
             }
         } else {
@@ -665,3 +674,4 @@ function getFrontmatterValue(frontmatter, fieldNames) {
     }
     return undefined;
 }
+

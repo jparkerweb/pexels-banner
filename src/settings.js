@@ -21,6 +21,8 @@ const DEFAULT_SETTINGS = {
     imageRepeat: false,
     bannerHeight: 350,
     customBannerHeightField: ['banner-height'],
+    fade: -75,
+    customFadeField: ['banner-fade'],
 };
 
 class FolderSuggestModal extends FuzzySuggestModal {
@@ -56,6 +58,9 @@ class FolderImageSetting extends Setting {
 
         this.settingEl.empty();
 
+        const folderImageDeleteContainer = this.settingEl.createDiv('folder-image-delete-container');
+        this.addDeleteButton(folderImageDeleteContainer);
+
         const infoEl = this.settingEl.createDiv("setting-item-info");
         infoEl.createDiv("setting-item-name");
         infoEl.createDiv("setting-item-description");
@@ -63,7 +68,32 @@ class FolderImageSetting extends Setting {
         this.addFolderInput();
         this.addImageInput();
         this.addImageDisplaySettings();
-        this.addPositions();
+        this.addYPostionAndContentStart();
+        this.addFadeAndBannerHeight();
+    }
+
+    addDeleteButton(containerEl) {
+        const deleteButton = containerEl.createEl('button');
+        deleteButton.style.marginLeft = '20px';
+        deleteButton.style.width = '30px';
+        deleteButton.style.height = '30px';
+        deleteButton.style.padding = '0';
+        deleteButton.style.border = '1px solid #80000030';
+        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+        deleteButton.addEventListener('click', async () => {
+            this.plugin.settings.folderImages.splice(this.index, 1);
+            await this.plugin.saveSettings();
+            this.settingEl.remove();
+            if (this.onDelete) {
+                this.onDelete();
+            }
+        });
+        deleteButton.addEventListener('mouseover', () => {
+            deleteButton.style.color = 'red';
+        });
+        deleteButton.addEventListener('mouseout', () => {
+            deleteButton.style.color = '';
+        });
     }
 
     addFolderInput() {
@@ -141,17 +171,21 @@ class FolderImageSetting extends Setting {
         if (toggleEl) toggleEl.style.justifyContent = 'flex-start';
     }
 
-    addPositions() {
-        const controlEl = this.settingEl.createDiv("setting-item-control");
+    addYPostionAndContentStart() {
+        const controlEl = this.settingEl.createDiv("setting-item-control full-width-control");
         this.addYPositionInput(controlEl);
         this.addContentStartInput(controlEl);
+    }
+    addFadeAndBannerHeight() {
+        const controlEl = this.settingEl.createDiv("setting-item-control full-width-control");
+        this.addFadeInput(controlEl);
         this.addBannerHeightInput(controlEl);
-        this.addDeleteButton(controlEl);
     }
 
     addYPositionInput(containerEl) {
-        const label = containerEl.createEl('label', { text: 'y-position' });
-        const slider = containerEl.createEl('input', {
+        const label = containerEl.createEl('label', { text: 'y-position', cls: 'setting-item-name__label' });
+        const sliderContainer = containerEl.createEl('div', { cls: 'slider-container' });
+        const slider = sliderContainer.createEl('input', {
             type: 'range',
             cls: 'slider',
             attr: {
@@ -161,17 +195,34 @@ class FolderImageSetting extends Setting {
             }
         });
         slider.value = this.folderImage.yPosition || "50";
-        slider.style.marginLeft = '20px';
+        slider.style.width = '100px';
+        slider.style.marginLeft = '10px';
+        
+        const valueDisplay = sliderContainer.createEl('div', { cls: 'slider-value' });
+        valueDisplay.style.marginLeft = '10px';
+        
+        const updateValueDisplay = (value) => {
+            valueDisplay.textContent = value;
+        };
+        
+        updateValueDisplay(slider.value);
+        
+        slider.addEventListener('input', (event) => {
+            updateValueDisplay(event.target.value);
+        });
+
         slider.addEventListener('change', async () => {
             this.folderImage.yPosition = parseInt(slider.value);
             await this.plugin.saveSettings();
         });
-        label.appendChild(slider);
+        
+        label.appendChild(sliderContainer);
+        containerEl.appendChild(label);
     }
 
     addContentStartInput(containerEl) {
-        const label = containerEl.createEl('label', { text: 'content start' });
-        label.style.marginLeft = '18px';
+        const label = containerEl.createEl('label', { text: 'content start', cls: 'setting-item-name__label' });
+        label.style.marginLeft = '20px';
 
         const contentStartInput = containerEl.createEl('input', {
             type: 'number',
@@ -181,7 +232,6 @@ class FolderImageSetting extends Setting {
         });
         contentStartInput.style.width = '50px';
         contentStartInput.style.marginLeft = '10px';
-        contentStartInput.style.marginRight = '10px';
         contentStartInput.value = this.folderImage.contentStartPosition || "150";
         contentStartInput.addEventListener('change', async () => {
             this.folderImage.contentStartPosition = parseInt(contentStartInput.value);
@@ -189,10 +239,12 @@ class FolderImageSetting extends Setting {
         });
 
         label.appendChild(contentStartInput);
+        containerEl.appendChild(label);
     }
 
     addBannerHeightInput(containerEl) {
-        const label = containerEl.createEl('label', { text: 'banner height' });
+        const label = containerEl.createEl('label', { text: 'banner height', cls: 'setting-item-name__label' });
+        label.style.marginLeft = '20px';
         const heightInput = containerEl.createEl('input', {
             type: 'number',
             attr: {
@@ -202,48 +254,65 @@ class FolderImageSetting extends Setting {
         });
         heightInput.style.width = '50px';
         heightInput.style.marginLeft = '10px';
-        heightInput.value = this.folderImage.bannerHeight || ""; // Change this line
-        heightInput.placeholder = String(this.plugin.settings.bannerHeight || 350); // Add this line
+        heightInput.value = this.folderImage.bannerHeight || "";
+        heightInput.placeholder = String(this.plugin.settings.bannerHeight || 350);
         heightInput.addEventListener('change', async () => {
-            let value = heightInput.value ? parseInt(heightInput.value) : null; // Change this line
-            if (value !== null) { // Change this condition
+            let value = heightInput.value ? parseInt(heightInput.value) : null;
+            if (value !== null) {
                 value = Math.max(100, Math.min(2500, value));
                 this.folderImage.bannerHeight = value;
                 heightInput.value = value;
             } else {
-                delete this.folderImage.bannerHeight; // Remove the property if input is empty
+                delete this.folderImage.bannerHeight;
                 heightInput.value = "";
             }
             await this.plugin.saveSettings();
         });
 
         label.appendChild(heightInput);
+        containerEl.appendChild(label);
     }
 
-    addDeleteButton(containerEl) {
-        const deleteButton = containerEl.createEl('button');
-        deleteButton.style.marginLeft = '50px';
-        deleteButton.style.width = '50px';
-        deleteButton.style.border = '1px solid #80000030';
-        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
-        deleteButton.addEventListener('click', async () => {
-            this.plugin.settings.folderImages.splice(this.index, 1);
-            await this.plugin.saveSettings();
-            this.settingEl.remove();
-            if (this.onDelete) {
-                this.onDelete();
+    addFadeInput(containerEl) {
+        const label = containerEl.createEl('label', { text: 'fade', cls: 'setting-item-name__label' });
+        const sliderContainer = containerEl.createEl('div', { cls: 'slider-container' });
+        const slider = sliderContainer.createEl('input', {
+            type: 'range',
+            cls: 'slider',
+            attr: {
+                min: '-1500',
+                max: '100',
+                step: '5'
             }
         });
-        deleteButton.addEventListener('mouseover', () => {
-            deleteButton.style.color = 'red';
+        slider.value = this.folderImage.fade !== undefined ? this.folderImage.fade : "-75";
+        slider.style.width = '100px';
+        slider.style.marginLeft = '10px';
+        
+        const valueDisplay = sliderContainer.createEl('div', { cls: 'slider-value' });
+        valueDisplay.style.marginLeft = '10px';
+        
+        const updateValueDisplay = (value) => {
+            valueDisplay.textContent = value;
+        };
+        
+        updateValueDisplay(slider.value);
+        
+        slider.addEventListener('input', (event) => {
+            updateValueDisplay(event.target.value);
         });
-        deleteButton.addEventListener('mouseout', () => {
-            deleteButton.style.color = '';
+
+        slider.addEventListener('change', async () => {
+            this.folderImage.fade = parseInt(slider.value);
+            await this.plugin.saveSettings();
         });
+        
+        label.appendChild(sliderContainer);
+        containerEl.appendChild(label);
     }
 }
 
-// Helper functions (move outside the class)
+// Helper functions
 function arrayToString(arr) {
     return Array.isArray(arr) ? arr.join(', ') : arr;
 }
@@ -546,7 +615,19 @@ class PixelBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.updateAllBanners();
                 })
-            );
+            )
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.yPosition = DEFAULT_SETTINGS.yPosition;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                    // Update the slider value
+                    const sliderEl = button.extraSettingsEl.parentElement.querySelector('.slider');
+                    sliderEl.value = DEFAULT_SETTINGS.yPosition;
+                    sliderEl.dispatchEvent(new Event('input'));
+                }));
 
         new Setting(containerEl)
             .setName('Content Start Position')
@@ -567,7 +648,19 @@ class PixelBannerSettingTab extends PluginSettingTab {
                 inputEl.type = 'number';
                 inputEl.min = '0';
                 inputEl.style.width = '60px';
-            });
+            })
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.contentStartPosition = DEFAULT_SETTINGS.contentStartPosition;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                    // Update the input value
+                    const inputEl = button.extraSettingsEl.parentElement.querySelector('input');
+                    inputEl.value = DEFAULT_SETTINGS.contentStartPosition;
+                    inputEl.dispatchEvent(new Event('input'));
+                }));
 
         new Setting(containerEl)
             .setName('Image Display')
@@ -581,17 +674,45 @@ class PixelBannerSettingTab extends PluginSettingTab {
                     this.plugin.settings.imageDisplay = value;
                     await this.plugin.saveSettings();
                     this.plugin.updateAllBanners();
+                }))
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.imageDisplay = DEFAULT_SETTINGS.imageDisplay;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                    // Update the dropdown value
+                    const dropdownEl = button.extraSettingsEl.parentElement.querySelector('select');
+                    dropdownEl.value = DEFAULT_SETTINGS.imageDisplay;
+                    dropdownEl.dispatchEvent(new Event('change'));
                 }));
 
         new Setting(containerEl)
             .setName('Image Repeat')
             .setDesc('Enable image repetition when "Contain" is selected')
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.imageRepeat || false)
+                .setValue(this.plugin.settings.imageRepeat)
                 .onChange(async (value) => {
                     this.plugin.settings.imageRepeat = value;
                     await this.plugin.saveSettings();
                     this.plugin.updateAllBanners();
+                }))
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    // Update the plugin setting
+                    this.plugin.settings.imageRepeat = DEFAULT_SETTINGS.imageRepeat;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+
+                    // Update the toggle value
+                    const toggleEl = button.extraSettingsEl.parentElement.querySelector('.checkbox-container input');
+                    if (toggleEl) {
+                        toggleEl.checked = DEFAULT_SETTINGS.imageRepeat;
+                        toggleEl.dispatchEvent(new Event('change'));
+                    }
                 }));
 
         new Setting(containerEl)
@@ -627,7 +748,45 @@ class PixelBannerSettingTab extends PluginSettingTab {
                 text.inputEl.min = '100';
                 text.inputEl.max = '2500';
                 text.inputEl.style.width = '50px';
-            });
+            })
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.bannerHeight = DEFAULT_SETTINGS.bannerHeight;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                    // Update the input value
+                    const inputEl = button.extraSettingsEl.parentElement.querySelector('input');
+                    inputEl.value = DEFAULT_SETTINGS.bannerHeight;
+                    inputEl.dispatchEvent(new Event('input'));
+                }));
+
+        new Setting(containerEl)
+            .setName('Banner Fade')
+            .setDesc('Set the default fade effect for the banner image (-1500 to 100)')
+            .addSlider(slider => slider
+                .setLimits(-1500, 100, 5)
+                .setValue(this.plugin.settings.fade)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.fade = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                })
+            )
+            .addExtraButton(button => button
+                .setIcon('reset')
+                .setTooltip('Reset to default')
+                .onClick(async () => {
+                    this.plugin.settings.fade = DEFAULT_SETTINGS.fade;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                    // Update the slider value
+                    const sliderEl = button.extraSettingsEl.parentElement.querySelector('.slider');
+                    sliderEl.value = DEFAULT_SETTINGS.fade;
+                    sliderEl.dispatchEvent(new Event('input'));
+                }));
     }
 
     createCustomFieldsSettings(containerEl) {
@@ -678,6 +837,12 @@ class PixelBannerSettingTab extends PluginSettingTab {
                 name: 'Banner Height Field Names',
                 desc: 'Set custom field names for the banner height in frontmatter (comma-separated)',
                 placeholder: 'banner-height, image-height, header-height'
+            },
+            {
+                setting: 'customFadeField',
+                name: 'Fade Field Names',
+                desc: 'Set custom field names for the fade effect in frontmatter (comma-separated)',
+                placeholder: 'banner-fade, fade-effect, image-fade'
             }
         ];
 
@@ -783,6 +948,7 @@ ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 200
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: true
 ${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 400
+${getRandomFieldName(this.plugin.settings.customFadeField)}: -75
 ---
 
 # Or use a direct URL:
@@ -792,6 +958,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 70
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 180
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: cover
 ${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 300
+${getRandomFieldName(this.plugin.settings.customFadeField)}: -75
 ---
 
 # Or use a path to an image in the vault:
@@ -801,6 +968,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 0
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 100
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: auto
 ${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 250
+${getRandomFieldName(this.plugin.settings.customFadeField)}: -75
 ---
 
 # Or use an Obsidian internal link:
@@ -811,6 +979,7 @@ ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 50
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: false
 ${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 500
+${getRandomFieldName(this.plugin.settings.customFadeField)}: -75
 ---`
         });
 
