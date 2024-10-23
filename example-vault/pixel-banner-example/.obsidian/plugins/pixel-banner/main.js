@@ -466,10 +466,13 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       this.plugin.settings.imageRepeat = DEFAULT_SETTINGS.imageRepeat;
       await this.plugin.saveSettings();
       this.plugin.updateAllBanners();
-      const toggleEl = button.extraSettingsEl.parentElement.querySelector(".checkbox-container input");
+      const checkboxContainer = button.extraSettingsEl.parentElement.querySelector(".checkbox-container");
+      const toggleEl = checkboxContainer.querySelector("input");
       if (toggleEl) {
         toggleEl.checked = DEFAULT_SETTINGS.imageRepeat;
-        toggleEl.dispatchEvent(new Event("change"));
+        checkboxContainer.classList.toggle("is-enabled", DEFAULT_SETTINGS.imageRepeat);
+        const event = new Event("change", { bubbles: true });
+        toggleEl.dispatchEvent(event);
       }
     }));
     new import_obsidian.Setting(containerEl).setName("Banner Height").setDesc("Set the default height of the banner image (100-2500 pixels)").addText((text) => {
