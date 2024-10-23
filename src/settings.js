@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
     contentStartPosition: 150,
     imageDisplay: 'cover',
     imageRepeat: false,
+    bannerHeight: 350,
+    customBannerHeightField: ['banner-height'],
 };
 
 class FolderSuggestModal extends FuzzySuggestModal {
@@ -143,6 +145,7 @@ class FolderImageSetting extends Setting {
         const controlEl = this.settingEl.createDiv("setting-item-control");
         this.addYPositionInput(controlEl);
         this.addContentStartInput(controlEl);
+        this.addBannerHeightInput(controlEl);
         this.addDeleteButton(controlEl);
     }
 
@@ -167,7 +170,7 @@ class FolderImageSetting extends Setting {
     }
 
     addContentStartInput(containerEl) {
-        const label = containerEl.createEl('label', { text: 'content start position' });
+        const label = containerEl.createEl('label', { text: 'content start' });
         label.style.marginLeft = '18px';
 
         const contentStartInput = containerEl.createEl('input', {
@@ -177,7 +180,8 @@ class FolderImageSetting extends Setting {
             }
         });
         contentStartInput.style.width = '50px';
-        contentStartInput.style.marginLeft = '20px';
+        contentStartInput.style.marginLeft = '10px';
+        contentStartInput.style.marginRight = '10px';
         contentStartInput.value = this.folderImage.contentStartPosition || "150";
         contentStartInput.addEventListener('change', async () => {
             this.folderImage.contentStartPosition = parseInt(contentStartInput.value);
@@ -185,6 +189,35 @@ class FolderImageSetting extends Setting {
         });
 
         label.appendChild(contentStartInput);
+    }
+
+    addBannerHeightInput(containerEl) {
+        const label = containerEl.createEl('label', { text: 'banner height' });
+        const heightInput = containerEl.createEl('input', {
+            type: 'number',
+            attr: {
+                min: '100',
+                max: '2500'
+            }
+        });
+        heightInput.style.width = '50px';
+        heightInput.style.marginLeft = '10px';
+        heightInput.value = this.folderImage.bannerHeight || ""; // Change this line
+        heightInput.placeholder = String(this.plugin.settings.bannerHeight || 350); // Add this line
+        heightInput.addEventListener('change', async () => {
+            let value = heightInput.value ? parseInt(heightInput.value) : null; // Change this line
+            if (value !== null) { // Change this condition
+                value = Math.max(100, Math.min(2500, value));
+                this.folderImage.bannerHeight = value;
+                heightInput.value = value;
+            } else {
+                delete this.folderImage.bannerHeight; // Remove the property if input is empty
+                heightInput.value = "";
+            }
+            await this.plugin.saveSettings();
+        });
+
+        label.appendChild(heightInput);
     }
 
     addDeleteButton(containerEl) {
@@ -560,6 +593,41 @@ class PixelBannerSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.updateAllBanners();
                 }));
+
+        new Setting(containerEl)
+            .setName('Banner Height')
+            .setDesc('Set the default height of the banner image (100-2500 pixels)')
+            .addText(text => {
+                text.setPlaceholder('350')
+                    .setValue(String(this.plugin.settings.bannerHeight))
+                    .onChange(async (value) => {
+                        // Allow any input, including empty string
+                        if (value === '' || !isNaN(Number(value))) {
+                            await this.plugin.saveSettings();
+                        }
+                    });
+                
+                // Add event listener for 'blur' event
+                text.inputEl.addEventListener('blur', async (event) => {
+                    let numValue = Number(event.target.value);
+                    if (isNaN(numValue) || event.target.value === '') {
+                        // If the value is not a number or is empty, set to default
+                        numValue = 350;
+                    } else {
+                        // Ensure value is between 100 and 2500
+                        numValue = Math.max(100, Math.min(2500, numValue));
+                    }
+                    this.plugin.settings.bannerHeight = numValue;
+                    text.setValue(String(numValue));
+                    await this.plugin.saveSettings();
+                    this.plugin.updateAllBanners();
+                });
+
+                text.inputEl.type = 'number';
+                text.inputEl.min = '100';
+                text.inputEl.max = '2500';
+                text.inputEl.style.width = '50px';
+            });
     }
 
     createCustomFieldsSettings(containerEl) {
@@ -604,6 +672,12 @@ class PixelBannerSettingTab extends PluginSettingTab {
                 name: 'Image Repeat Field Names',
                 desc: 'Set custom field names for the image repeat in frontmatter (comma-separated)',
                 placeholder: 'banner-repeat, image-repeat, repeat-image'
+            },
+            {
+                setting: 'customBannerHeightField',
+                name: 'Banner Height Field Names',
+                desc: 'Set custom field names for the banner height in frontmatter (comma-separated)',
+                placeholder: 'banner-height, image-height, header-height'
             }
         ];
 
@@ -708,6 +782,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 30
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 200
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: true
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 400
 ---
 
 # Or use a direct URL:
@@ -716,6 +791,7 @@ ${getRandomFieldName(this.plugin.settings.customBannerField)}: https://example.c
 ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 70
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 180
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: cover
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 300
 ---
 
 # Or use a path to an image in the vault:
@@ -724,6 +800,7 @@ ${getRandomFieldName(this.plugin.settings.customBannerField)}: Assets/my-image.p
 ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 0
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 100
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: auto
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 250
 ---
 
 # Or use an Obsidian internal link:
@@ -733,6 +810,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 100
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 50
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: false
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 500
 ---`
         });
 

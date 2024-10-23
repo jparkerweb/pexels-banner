@@ -30,7 +30,9 @@ var DEFAULT_SETTINGS = {
   folderImages: [],
   contentStartPosition: 150,
   imageDisplay: "cover",
-  imageRepeat: false
+  imageRepeat: false,
+  bannerHeight: 350,
+  customBannerHeightField: ["banner-height"]
 };
 var FolderSuggestModal = class extends import_obsidian.FuzzySuggestModal {
   constructor(app, onChoose) {
@@ -115,6 +117,7 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     const controlEl = this.settingEl.createDiv("setting-item-control");
     this.addYPositionInput(controlEl);
     this.addContentStartInput(controlEl);
+    this.addBannerHeightInput(controlEl);
     this.addDeleteButton(controlEl);
   }
   addYPositionInput(containerEl) {
@@ -137,7 +140,7 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     label.appendChild(slider);
   }
   addContentStartInput(containerEl) {
-    const label = containerEl.createEl("label", { text: "content start position" });
+    const label = containerEl.createEl("label", { text: "content start" });
     label.style.marginLeft = "18px";
     const contentStartInput = containerEl.createEl("input", {
       type: "number",
@@ -146,13 +149,41 @@ var FolderImageSetting = class extends import_obsidian.Setting {
       }
     });
     contentStartInput.style.width = "50px";
-    contentStartInput.style.marginLeft = "20px";
+    contentStartInput.style.marginLeft = "10px";
+    contentStartInput.style.marginRight = "10px";
     contentStartInput.value = this.folderImage.contentStartPosition || "150";
     contentStartInput.addEventListener("change", async () => {
       this.folderImage.contentStartPosition = parseInt(contentStartInput.value);
       await this.plugin.saveSettings();
     });
     label.appendChild(contentStartInput);
+  }
+  addBannerHeightInput(containerEl) {
+    const label = containerEl.createEl("label", { text: "banner height" });
+    const heightInput = containerEl.createEl("input", {
+      type: "number",
+      attr: {
+        min: "100",
+        max: "2500"
+      }
+    });
+    heightInput.style.width = "50px";
+    heightInput.style.marginLeft = "10px";
+    heightInput.value = this.folderImage.bannerHeight || "";
+    heightInput.placeholder = String(this.plugin.settings.bannerHeight || 350);
+    heightInput.addEventListener("change", async () => {
+      let value = heightInput.value ? parseInt(heightInput.value) : null;
+      if (value !== null) {
+        value = Math.max(100, Math.min(2500, value));
+        this.folderImage.bannerHeight = value;
+        heightInput.value = value;
+      } else {
+        delete this.folderImage.bannerHeight;
+        heightInput.value = "";
+      }
+      await this.plugin.saveSettings();
+    });
+    label.appendChild(heightInput);
   }
   addDeleteButton(containerEl) {
     const deleteButton = containerEl.createEl("button");
@@ -356,6 +387,29 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.updateAllBanners();
     }));
+    new import_obsidian.Setting(containerEl).setName("Banner Height").setDesc("Set the default height of the banner image (100-2500 pixels)").addText((text) => {
+      text.setPlaceholder("350").setValue(String(this.plugin.settings.bannerHeight)).onChange(async (value) => {
+        if (value === "" || !isNaN(Number(value))) {
+          await this.plugin.saveSettings();
+        }
+      });
+      text.inputEl.addEventListener("blur", async (event) => {
+        let numValue = Number(event.target.value);
+        if (isNaN(numValue) || event.target.value === "") {
+          numValue = 350;
+        } else {
+          numValue = Math.max(100, Math.min(2500, numValue));
+        }
+        this.plugin.settings.bannerHeight = numValue;
+        text.setValue(String(numValue));
+        await this.plugin.saveSettings();
+        this.plugin.updateAllBanners();
+      });
+      text.inputEl.type = "number";
+      text.inputEl.min = "100";
+      text.inputEl.max = "2500";
+      text.inputEl.style.width = "50px";
+    });
   }
   createCustomFieldsSettings(containerEl) {
     const calloutEl = containerEl.createEl("div", { cls: "callout" });
@@ -397,6 +451,12 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
         name: "Image Repeat Field Names",
         desc: "Set custom field names for the image repeat in frontmatter (comma-separated)",
         placeholder: "banner-repeat, image-repeat, repeat-image"
+      },
+      {
+        setting: "customBannerHeightField",
+        name: "Banner Height Field Names",
+        desc: "Set custom field names for the banner height in frontmatter (comma-separated)",
+        placeholder: "banner-height, image-height, header-height"
       }
     ];
     customFields.forEach((field) => {
@@ -469,6 +529,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 30
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 200
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: true
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 400
 ---
 
 # Or use a direct URL:
@@ -477,6 +538,7 @@ ${getRandomFieldName(this.plugin.settings.customBannerField)}: https://example.c
 ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 70
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 180
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: cover
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 300
 ---
 
 # Or use a path to an image in the vault:
@@ -485,6 +547,7 @@ ${getRandomFieldName(this.plugin.settings.customBannerField)}: Assets/my-image.p
 ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 0
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 100
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: auto
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 250
 ---
 
 # Or use an Obsidian internal link:
@@ -494,6 +557,7 @@ ${getRandomFieldName(this.plugin.settings.customYPositionField)}: 100
 ${getRandomFieldName(this.plugin.settings.customContentStartField)}: 50
 ${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
 ${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: false
+${getRandomFieldName(this.plugin.settings.customBannerHeightField)}: 500
 ---`
     });
     instructionsEl.createEl("p", { text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".' });
@@ -741,6 +805,8 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
         } else {
           bannerDiv.style.backgroundRepeat = bannerDiv.style.backgroundSize === "contain" && (this.getFolderSpecificSetting(file.path, "imageRepeat") || this.settings.imageRepeat) ? "repeat" : "no-repeat";
         }
+        const bannerHeight = getFrontmatterValue(frontmatter, this.settings.customBannerHeightField) || this.getFolderSpecificSetting(file.path, "bannerHeight") || this.settings.bannerHeight || 350;
+        bannerDiv.style.setProperty("--pixel-banner-height", `${bannerHeight}px`);
         bannerDiv.style.display = "block";
       }
     } else {

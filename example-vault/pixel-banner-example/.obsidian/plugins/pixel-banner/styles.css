@@ -16,7 +16,7 @@
 	overflow: hidden;  
 	mask-image: linear-gradient(to bottom,black -75%,transparent);
 	-webkit-mask-image: linear-gradient(to bottom,black -75%,transparent);
-	height: 350px;
+	height: var(--pixel-banner-height, 350px);
     border-radius: 17px !important;
 	pointer-events: none;
 	animation: pixel-banner-image--fade-in 0.4s ease-in-out;

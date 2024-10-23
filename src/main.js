@@ -267,6 +267,13 @@ module.exports = class PixelBannerPlugin extends Plugin {
                         (this.getFolderSpecificSetting(file.path, 'imageRepeat') || this.settings.imageRepeat)) ? 'repeat' : 'no-repeat';
                 }
                 
+                // Set the banner height
+                const bannerHeight = getFrontmatterValue(frontmatter, this.settings.customBannerHeightField) ||
+                    this.getFolderSpecificSetting(file.path, 'bannerHeight') ||
+                    this.settings.bannerHeight ||
+                    350;
+                bannerDiv.style.setProperty('--pixel-banner-height', `${bannerHeight}px`);
+
                 bannerDiv.style.display = 'block';
             }
         } else {

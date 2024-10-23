@@ -29,14 +29,20 @@
     {
       "folder": "notes",
       "image": "images/jp-cover2.jpg",
-      "yPosition": 78,
+      "yPosition": 25,
       "contentStartPosition": 70,
       "imageDisplay": "cover",
-      "imageRepeat": true
+      "imageRepeat": true,
+      "bannerHeight": 250
     }
   ],
-  "contentStartPosition": 1,
+  "contentStartPosition": 150,
   "imageDisplay": "cover",
   "imageRepeat": false,
+  "bannerHeight": 350,
+  "customBannerHeightField": [
+    "banner-height",
+    "height"
+  ],
   "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq"
 }
