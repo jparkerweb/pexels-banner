@@ -640,7 +640,15 @@ class PixelBannerSettingTab extends PluginSettingTab {
                     .onClick(async () => {
                         this.plugin.settings[field.setting] = DEFAULT_SETTINGS[field.setting];
                         await this.plugin.saveSettings();
-                        this.display();
+                        
+                        // Update only this specific setting
+                        const settingEl = button.extraSettingsEl.parentElement;
+                        const textInput = settingEl.querySelector('input[type="text"]');
+                        textInput.value = arrayToString(DEFAULT_SETTINGS[field.setting]);
+                        
+                        // Trigger the change event to update the plugin's state
+                        const event = new Event('input', { bubbles: true, cancelable: true });
+                        textInput.dispatchEvent(event);
                     }));
         });
     }

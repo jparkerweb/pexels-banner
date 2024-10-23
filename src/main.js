@@ -252,19 +252,19 @@ module.exports = class PixelBannerPlugin extends Plugin {
             if (imageUrl) {
                 bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
                 bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
-                bannerDiv.style.backgroundSize = frontmatter[this.settings.customImageDisplayField] || 
+                bannerDiv.style.backgroundSize = getFrontmatterValue(frontmatter, this.settings.customImageDisplayField) || 
                     this.getFolderSpecificSetting(file.path, 'imageDisplay') || 
                     this.settings.imageDisplay || 
                     'cover';
                 
-                if (bannerDiv.style.backgroundSize === 'contain') {
-                    bannerDiv.style.backgroundRepeat = (frontmatter[this.settings.customImageRepeatField] !== undefined ? 
-                        frontmatter[this.settings.customImageRepeatField] : 
-                        this.getFolderSpecificSetting(file.path, 'imageRepeat') !== undefined ?
-                        this.getFolderSpecificSetting(file.path, 'imageRepeat') :
-                        this.settings.imageRepeat) ? 'repeat' : 'no-repeat';
+                const shouldRepeat = getFrontmatterValue(frontmatter, this.settings.customImageRepeatField);
+                if (shouldRepeat !== undefined) {
+                    // Convert the value to a boolean
+                    const repeatValue = String(shouldRepeat).toLowerCase() === 'true';
+                    bannerDiv.style.backgroundRepeat = repeatValue ? 'repeat' : 'no-repeat';
                 } else {
-                    bannerDiv.style.backgroundRepeat = 'no-repeat';
+                    bannerDiv.style.backgroundRepeat = (bannerDiv.style.backgroundSize === 'contain' && 
+                        (this.getFolderSpecificSetting(file.path, 'imageRepeat') || this.settings.imageRepeat)) ? 'repeat' : 'no-repeat';
                 }
                 
                 bannerDiv.style.display = 'block';
@@ -648,7 +648,12 @@ function getFrontmatterValue(frontmatter, fieldNames) {
     
     for (const fieldName of fieldNames) {
         if (fieldName in frontmatter) {
-            return frontmatter[fieldName];
+            const value = frontmatter[fieldName];
+            // Convert 'true' and 'false' strings to actual boolean values
+            if (typeof value === 'string' && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) {
+                return value.toLowerCase() === 'true';
+            }
+            return value;
         }
     }
     return undefined;
