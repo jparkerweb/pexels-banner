@@ -1,0 +1,30 @@
+{
+  "apiProvider": "pexels",
+  "pexelsApiKey": "",
+  "pixabayApiKey": "",
+  "imageSize": "medium",
+  "imageOrientation": "landscape",
+  "numberOfImages": 10,
+  "defaultKeywords": "nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns",
+  "yPosition": 50,
+  "customBannerField": [
+    "banner",
+    "header-image"
+  ],
+  "customYPositionField": [
+    "banner-y"
+  ],
+  "customContentStartField": [
+    "content-start"
+  ],
+  "customImageDisplayField": [
+    "banner-display"
+  ],
+  "customImageRepeatField": [
+    "banner-repeat"
+  ],
+  "folderImages": [],
+  "contentStartPosition": 150,
+  "imageDisplay": "cover",
+  "imageRepeat": false
+}

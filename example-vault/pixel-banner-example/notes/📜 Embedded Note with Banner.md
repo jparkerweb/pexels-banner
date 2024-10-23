@@ -1,5 +1,5 @@
 ---
-banner: images/jp-cover3a.jpg
+header-image: images/jp-cover3a.jpg
 banner-y: 20
 content-start: "177"
 ---

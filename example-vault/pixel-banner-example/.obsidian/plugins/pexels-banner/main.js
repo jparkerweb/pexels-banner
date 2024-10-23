@@ -21,15 +21,16 @@ var DEFAULT_SETTINGS = {
   numberOfImages: 10,
   defaultKeywords: "nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns",
   yPosition: 50,
-  customBannerField: "banner",
-  customYPositionField: "banner-y",
+  // Update these fields to be arrays
+  customBannerField: ["banner"],
+  customYPositionField: ["banner-y"],
+  customContentStartField: ["content-start"],
+  customImageDisplayField: ["banner-display"],
+  customImageRepeatField: ["banner-repeat"],
   folderImages: [],
   contentStartPosition: 150,
-  customContentStartField: "content-start",
   imageDisplay: "cover",
-  imageRepeat: false,
-  customImageDisplayField: "banner-display",
-  customImageRepeatField: "banner-repeat"
+  imageRepeat: false
 };
 var FolderSuggestModal = class extends import_obsidian.FuzzySuggestModal {
   constructor(app, onChoose) {
@@ -175,6 +176,32 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     });
   }
 };
+function arrayToString(arr) {
+  return Array.isArray(arr) ? arr.join(", ") : arr;
+}
+function stringToArray(str) {
+  return str.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+}
+function validateFieldNames(settings, allFields, currentField, newNames) {
+  const validNamePattern = /^[a-zA-Z0-9_-]+$/;
+  const invalidNames = newNames.filter((name) => !validNamePattern.test(name));
+  if (invalidNames.length > 0) {
+    return {
+      isValid: false,
+      message: `Invalid characters in field names (only letters, numbers, dashes, and underscores allowed): ${invalidNames.join(", ")}`
+    };
+  }
+  const otherFields = allFields.filter((f) => f !== currentField);
+  const otherFieldNames = otherFields.flatMap((f) => settings[f]);
+  const duplicates = newNames.filter((name) => otherFieldNames.includes(name));
+  if (duplicates.length > 0) {
+    return {
+      isValid: false,
+      message: `Duplicate field names found: ${duplicates.join(", ")}`
+    };
+  }
+  return { isValid: true };
+}
 var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -213,19 +240,40 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     return { tabsEl, tabContentContainer };
   }
   createAPISettings(containerEl) {
+    const calloutEl = containerEl.createEl("div", { cls: "callout" });
+    calloutEl.createEl("p", { text: "Optionally select which API provider to use for fetching images. See the Examples tab for more information on referencing images by URL or local image. You can use any combination of API keyword, URL, or local image between notes." });
+    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
+    calloutEl.style.border = "1px solid var(--background-modifier-border)";
+    calloutEl.style.color = "var(--text-accent)";
+    calloutEl.style.fontSize = "0.9em";
+    calloutEl.style.borderRadius = "5px";
+    calloutEl.style.padding = "0 25px";
+    calloutEl.style.marginBottom = "20px";
     new import_obsidian.Setting(containerEl).setName("API Provider").setDesc("Select the API provider for fetching images").addDropdown((dropdown) => dropdown.addOption("pexels", "Pexels").addOption("pixabay", "Pixabay").setValue(this.plugin.settings.apiProvider).onChange(async (value) => {
       this.plugin.settings.apiProvider = value;
       await this.plugin.saveSettings();
       this.display();
     }));
-    new import_obsidian.Setting(containerEl).setName("Pexels API Key").setDesc("Enter your Pexels API key").addText((text) => text.setPlaceholder("Enter your Pexels API key").setValue(this.plugin.settings.pexelsApiKey).onChange(async (value) => {
-      this.plugin.settings.pexelsApiKey = value;
-      await this.plugin.saveSettings();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Pixabay API Key").setDesc("Enter your Pixabay API key").addText((text) => text.setPlaceholder("Enter your Pixabay API key").setValue(this.plugin.settings.pixabayApiKey).onChange(async (value) => {
-      this.plugin.settings.pixabayApiKey = value;
-      await this.plugin.saveSettings();
-    }));
+    new import_obsidian.Setting(containerEl).setName("Pexels API Key");
+    containerEl.createEl("span", { text: "Enter your Pexels API key. Get your API key from ", cls: "setting-item-description" }).createEl("a", { href: "https://www.pexels.com/api/", text: "Pexels API" });
+    const pexelsApiKeySetting = new import_obsidian.Setting(containerEl).addText((text) => {
+      text.setPlaceholder("Pexels API key").setValue(this.plugin.settings.pexelsApiKey).onChange(async (value) => {
+        this.plugin.settings.pexelsApiKey = value;
+        await this.plugin.saveSettings();
+      });
+      text.inputEl.style.width = "100%";
+    });
+    pexelsApiKeySetting.settingEl.addClass("full-width-control");
+    new import_obsidian.Setting(containerEl).setName("Pixabay API Key");
+    containerEl.createEl("span", { text: "Enter your Pixabay API key. Get your API key from ", cls: "setting-item-description" }).createEl("a", { href: "https://pixabay.com/api/docs/", text: "Pixabay API" });
+    const pixabayApiKeySetting = new import_obsidian.Setting(containerEl).addText((text) => {
+      text.setPlaceholder("Pixabay API key").setValue(this.plugin.settings.pixabayApiKey).onChange(async (value) => {
+        this.plugin.settings.pixabayApiKey = value;
+        await this.plugin.saveSettings();
+      });
+      text.inputEl.style.width = "100%";
+    });
+    pixabayApiKeySetting.settingEl.addClass("full-width-control");
     new import_obsidian.Setting(containerEl).setName("Images").setDesc("Configure settings for images fetched from API. These settings apply when using keywords to fetch random images.").setHeading();
     new import_obsidian.Setting(containerEl).setName("Size").setDesc("Select the size of the image - (API only)").addDropdown((dropdown) => dropdown.addOption("small", "Small").addOption("medium", "Medium").addOption("large", "Large").setValue(this.plugin.settings.imageSize).onChange(async (value) => {
       this.plugin.settings.imageSize = value;
@@ -269,6 +317,15 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     defaultKeywordsSetting.settingEl.style.flexDirection = "column";
   }
   createGeneralSettings(containerEl) {
+    const calloutEl = containerEl.createEl("div", { cls: "callout" });
+    calloutEl.createEl("p", { text: "Set the default vertical position of the image, how it should be displayed, and where the content should start. These are global settings and apply to all notes with banners unless overridden by folder or note-specific settings." });
+    calloutEl.style.backgroundColor = "var(--background-primary-alt)";
+    calloutEl.style.border = "1px solid var(--background-modifier-border)";
+    calloutEl.style.color = "var(--text-accent)";
+    calloutEl.style.fontSize = "0.9em";
+    calloutEl.style.borderRadius = "5px";
+    calloutEl.style.padding = "0 25px";
+    calloutEl.style.marginBottom = "20px";
     new import_obsidian.Setting(containerEl).setName("Image Vertical Position").setDesc("Set the vertical position of the image (0-100)").addSlider(
       (slider) => slider.setLimits(0, 100, 1).setValue(this.plugin.settings.yPosition).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.yPosition = value;
@@ -302,7 +359,7 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   }
   createCustomFieldsSettings(containerEl) {
     const calloutEl = containerEl.createEl("div", { cls: "callout" });
-    calloutEl.createEl("p", { text: "Customize the frontmatter field names used for the banner and Y-position. This allows you to use different field names in your notes." });
+    calloutEl.createEl("p", { text: 'Customize the frontmatter field names used for the banner and Y-position. You can define multiple names for each field, separated by commas. Field names can only contain letters, numbers, dashes, and underscores. Example: "banner, pixel-banner, header_image" could all be used as the banner field name.' });
     calloutEl.style.backgroundColor = "var(--background-primary-alt)";
     calloutEl.style.border = "1px solid var(--background-modifier-border)";
     calloutEl.style.color = "var(--text-accent)";
@@ -310,81 +367,67 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
     calloutEl.style.borderRadius = "5px";
     calloutEl.style.padding = "0 25px";
     calloutEl.style.marginBottom = "20px";
-    new import_obsidian.Setting(containerEl).setName("Banner Field Name").setDesc("Set a custom field name for the banner in frontmatter").addText((text) => {
-      text.setPlaceholder("pixel-banner").setValue(this.plugin.settings.customBannerField).onChange(async (value) => {
-        if (this.validateFieldName(value, this.plugin.settings.customYPositionField) && this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
-          this.plugin.settings.customBannerField = value;
-          await this.plugin.saveSettings();
-        } else {
-          text.setValue(this.plugin.settings.customBannerField);
-        }
-      });
-      text.inputEl.style.width = "220px";
-    }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-      this.plugin.settings.customBannerField = DEFAULT_SETTINGS.customBannerField;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Y-Position Field Name").setDesc("Set a custom field name for the Y-position in frontmatter").addText((text) => {
-      text.setPlaceholder("pixel-banner-y-position").setValue(this.plugin.settings.customYPositionField).onChange(async (value) => {
-        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customContentStartField)) {
-          this.plugin.settings.customYPositionField = value;
-          await this.plugin.saveSettings();
-        } else {
-          text.setValue(this.plugin.settings.customYPositionField);
-        }
-      });
-      text.inputEl.style.width = "220px";
-    }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-      this.plugin.settings.customYPositionField = DEFAULT_SETTINGS.customYPositionField;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Content Start Position Field Name").setDesc("Set a custom field name for the content start position in frontmatter").addText((text) => {
-      text.setPlaceholder("pixel-banner-content-start").setValue(this.plugin.settings.customContentStartField).onChange(async (value) => {
-        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customYPositionField)) {
-          this.plugin.settings.customContentStartField = value;
-          await this.plugin.saveSettings();
-        } else {
-          text.setValue(this.plugin.settings.customContentStartField);
-        }
-      });
-      text.inputEl.style.width = "220px";
-    }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-      this.plugin.settings.customContentStartField = DEFAULT_SETTINGS.customContentStartField;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Image Display Field Name").setDesc("Set a custom field name for the image display in frontmatter").addText((text) => {
-      text.setPlaceholder("banner-display").setValue(this.plugin.settings.customImageDisplayField).onChange(async (value) => {
-        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customYPositionField) && this.validateFieldName(value, this.plugin.settings.customContentStartField) && this.validateFieldName(value, this.plugin.settings.customImageRepeatField)) {
-          this.plugin.settings.customImageDisplayField = value;
-          await this.plugin.saveSettings();
-        } else {
-          text.setValue(this.plugin.settings.customImageDisplayField);
-        }
-      });
-      text.inputEl.style.width = "220px";
-    }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-      this.plugin.settings.customImageDisplayField = DEFAULT_SETTINGS.customImageDisplayField;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
-    new import_obsidian.Setting(containerEl).setName("Image Repeat Field Name").setDesc("Set a custom field name for the image repeat in frontmatter").addText((text) => {
-      text.setPlaceholder("banner-repeat").setValue(this.plugin.settings.customImageRepeatField).onChange(async (value) => {
-        if (this.validateFieldName(value, this.plugin.settings.customBannerField) && this.validateFieldName(value, this.plugin.settings.customYPositionField) && this.validateFieldName(value, this.plugin.settings.customContentStartField) && this.validateFieldName(value, this.plugin.settings.customImageDisplayField)) {
-          this.plugin.settings.customImageRepeatField = value;
-          await this.plugin.saveSettings();
-        } else {
-          text.setValue(this.plugin.settings.customImageRepeatField);
-        }
-      });
-      text.inputEl.style.width = "220px";
-    }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-      this.plugin.settings.customImageRepeatField = DEFAULT_SETTINGS.customImageRepeatField;
-      await this.plugin.saveSettings();
-      this.display();
-    }));
+    const customFields = [
+      {
+        setting: "customBannerField",
+        name: "Banner Field Names",
+        desc: "Set custom field names for the banner in frontmatter (comma-separated)",
+        placeholder: "banner, pixel-banner, header-image"
+      },
+      {
+        setting: "customYPositionField",
+        name: "Y-Position Field Names",
+        desc: "Set custom field names for the Y-position in frontmatter (comma-separated)",
+        placeholder: "banner-y, y-position, banner-offset"
+      },
+      {
+        setting: "customContentStartField",
+        name: "Content Start Position Field Names",
+        desc: "Set custom field names for the content start position in frontmatter (comma-separated)",
+        placeholder: "content-start, start-position, content-offset"
+      },
+      {
+        setting: "customImageDisplayField",
+        name: "Image Display Field Names",
+        desc: "Set custom field names for the image display in frontmatter (comma-separated)",
+        placeholder: "banner-display, image-display, display-mode"
+      },
+      {
+        setting: "customImageRepeatField",
+        name: "Image Repeat Field Names",
+        desc: "Set custom field names for the image repeat in frontmatter (comma-separated)",
+        placeholder: "banner-repeat, image-repeat, repeat-image"
+      }
+    ];
+    customFields.forEach((field) => {
+      new import_obsidian.Setting(containerEl).setName(field.name).setDesc(field.desc).addText((text) => {
+        text.setPlaceholder(field.placeholder).setValue(arrayToString(this.plugin.settings[field.setting])).onChange(async (value) => {
+          const newNames = stringToArray(value);
+          const validation = validateFieldNames(
+            this.plugin.settings,
+            customFields.map((f) => f.setting),
+            field.setting,
+            newNames
+          );
+          if (validation.isValid) {
+            this.plugin.settings[field.setting] = newNames;
+            await this.plugin.saveSettings();
+          } else {
+            new Notice(validation.message);
+            text.setValue(arrayToString(this.plugin.settings[field.setting]));
+          }
+        });
+        text.inputEl.style.width = "220px";
+      }).addExtraButton((button) => button.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+        this.plugin.settings[field.setting] = DEFAULT_SETTINGS[field.setting];
+        await this.plugin.saveSettings();
+        const settingEl = button.extraSettingsEl.parentElement;
+        const textInput = settingEl.querySelector('input[type="text"]');
+        textInput.value = arrayToString(DEFAULT_SETTINGS[field.setting]);
+        const event = new Event("input", { bubbles: true, cancelable: true });
+        textInput.dispatchEvent(event);
+      }));
+    });
   }
   createFolderSettings(containerEl) {
     const calloutEl = containerEl.createEl("div", { cls: "callout" });
@@ -412,41 +455,45 @@ var PixelBannerSettingTab = class extends import_obsidian.PluginSettingTab {
   }
   createExampleSettings(containerEl) {
     new import_obsidian.Setting(containerEl).setName("How to use").setHeading();
+    const getRandomFieldName = (fieldNames) => {
+      const names = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+      return names[Math.floor(Math.random() * names.length)];
+    };
     const instructionsEl = containerEl.createEl("div", { cls: "pixel-banner-section" });
     instructionsEl.createEl("p", { text: "Add the following fields to your note's frontmatter to customize the banner:" });
     const codeEl = instructionsEl.createEl("pre");
     codeEl.createEl("code", {
       text: `---
-${this.plugin.settings.customBannerField}: blue turtle
-${this.plugin.settings.customYPositionField}: 30
-${this.plugin.settings.customContentStartField}: 200
-${this.plugin.settings.customImageDisplayField}: contain
-${this.plugin.settings.customImageRepeatField}: true
+${getRandomFieldName(this.plugin.settings.customBannerField)}: blue turtle
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 30
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 200
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
+${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: true
 ---
 
 # Or use a direct URL:
 ---
-${this.plugin.settings.customBannerField}: https://example.com/image.jpg
-${this.plugin.settings.customYPositionField}: 70
-${this.plugin.settings.customContentStartField}: 180
-${this.plugin.settings.customImageDisplayField}: cover
+${getRandomFieldName(this.plugin.settings.customBannerField)}: https://example.com/image.jpg
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 70
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 180
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: cover
 ---
 
 # Or use a path to an image in the vault:
 ---
-${this.plugin.settings.customBannerField}: Assets/my-image.png
-${this.plugin.settings.customYPositionField}: 0
-${this.plugin.settings.customContentStartField}: 100
-${this.plugin.settings.customImageDisplayField}: auto
+${getRandomFieldName(this.plugin.settings.customBannerField)}: Assets/my-image.png
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 0
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 100
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: auto
 ---
 
 # Or use an Obsidian internal link:
 ---
-${this.plugin.settings.customBannerField}: [[example-image.png]]
-${this.plugin.settings.customYPositionField}: 100
-${this.plugin.settings.customContentStartField}: 50
-${this.plugin.settings.customImageDisplayField}: contain
-${this.plugin.settings.customImageRepeatField}: false
+${getRandomFieldName(this.plugin.settings.customBannerField)}: [[example-image.png]]
+${getRandomFieldName(this.plugin.settings.customYPositionField)}: 100
+${getRandomFieldName(this.plugin.settings.customContentStartField)}: 50
+${getRandomFieldName(this.plugin.settings.customImageDisplayField)}: contain
+${getRandomFieldName(this.plugin.settings.customImageRepeatField)}: false
 ---`
     });
     instructionsEl.createEl("p", { text: 'Note: The image display options are "auto", "cover", or "contain". The image repeat option is only applicable when the display is set to "contain".' });
@@ -520,6 +567,7 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.migrateCustomFields();
     if (!Array.isArray(this.settings.folderImages)) {
       this.settings.folderImages = [];
     }
@@ -529,6 +577,25 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
         folderImage.imageRepeat = folderImage.imageRepeat || false;
       });
     }
+  }
+  migrateCustomFields() {
+    const fieldsToMigrate = [
+      "customBannerField",
+      "customYPositionField",
+      "customContentStartField",
+      "customImageDisplayField",
+      "customImageRepeatField"
+    ];
+    fieldsToMigrate.forEach((field) => {
+      if (typeof this.settings[field] === "string") {
+        console.log(`converting ${field} to array`);
+        this.settings[field] = [this.settings[field]];
+      } else if (!Array.isArray(this.settings[field])) {
+        console.log(`setting default value for ${field}`);
+        this.settings[field] = DEFAULT_SETTINGS[field];
+      }
+    });
+    this.saveSettings();
   }
   async saveSettings() {
     await this.saveData(this.settings);
@@ -582,12 +649,9 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     }
     const frontmatter = (_a = this.app.metadataCache.getFileCache(view.file)) == null ? void 0 : _a.frontmatter;
     const contentEl = view.contentEl;
-    const customBannerField = this.settings.customBannerField;
-    const customYPositionField = this.settings.customYPositionField;
-    const customContentStartField = this.settings.customContentStartField;
     let yPosition = this.settings.yPosition;
     let contentStartPosition = this.settings.contentStartPosition;
-    let bannerImage = frontmatter && frontmatter[customBannerField];
+    let bannerImage = getFrontmatterValue(frontmatter, this.settings.customBannerField);
     const folderSpecific = this.getFolderSpecificImage(view.file.path);
     if (folderSpecific) {
       bannerImage = bannerImage || folderSpecific.image;
@@ -595,11 +659,11 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       contentStartPosition = folderSpecific.contentStartPosition;
     }
     if (frontmatter) {
-      const customYPosition = frontmatter[customYPositionField];
+      const customYPosition = getFrontmatterValue(frontmatter, this.settings.customYPositionField);
       if (customYPosition !== void 0) {
         yPosition = customYPosition;
       }
-      const customContentStart = frontmatter[customContentStartField];
+      const customContentStart = getFrontmatterValue(frontmatter, this.settings.customContentStartField);
       if (customContentStart !== void 0) {
         contentStartPosition = customContentStart;
       }
@@ -614,9 +678,9 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       isContentChange,
       yPosition,
       contentStartPosition,
-      customBannerField,
-      customYPositionField,
-      customContentStartField,
+      customBannerField: this.settings.customBannerField,
+      customYPositionField: this.settings.customYPositionField,
+      customContentStartField: this.settings.customContentStartField,
       bannerImage,
       isReadingView: view.getMode && view.getMode() === "preview"
     });
@@ -669,11 +733,13 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       if (imageUrl) {
         bannerDiv.style.backgroundImage = `url('${imageUrl}')`;
         bannerDiv.style.backgroundPosition = `center ${yPosition}%`;
-        bannerDiv.style.backgroundSize = frontmatter[this.settings.customImageDisplayField] || this.getFolderSpecificSetting(file.path, "imageDisplay") || this.settings.imageDisplay || "cover";
-        if (bannerDiv.style.backgroundSize === "contain") {
-          bannerDiv.style.backgroundRepeat = (frontmatter[this.settings.customImageRepeatField] !== void 0 ? frontmatter[this.settings.customImageRepeatField] : this.getFolderSpecificSetting(file.path, "imageRepeat") !== void 0 ? this.getFolderSpecificSetting(file.path, "imageRepeat") : this.settings.imageRepeat) ? "repeat" : "no-repeat";
+        bannerDiv.style.backgroundSize = getFrontmatterValue(frontmatter, this.settings.customImageDisplayField) || this.getFolderSpecificSetting(file.path, "imageDisplay") || this.settings.imageDisplay || "cover";
+        const shouldRepeat = getFrontmatterValue(frontmatter, this.settings.customImageRepeatField);
+        if (shouldRepeat !== void 0) {
+          const repeatValue = String(shouldRepeat).toLowerCase() === "true";
+          bannerDiv.style.backgroundRepeat = repeatValue ? "repeat" : "no-repeat";
         } else {
-          bannerDiv.style.backgroundRepeat = "no-repeat";
+          bannerDiv.style.backgroundRepeat = bannerDiv.style.backgroundSize === "contain" && (this.getFolderSpecificSetting(file.path, "imageRepeat") || this.settings.imageRepeat) ? "repeat" : "no-repeat";
         }
         bannerDiv.style.display = "block";
       }
@@ -960,5 +1026,18 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     return void 0;
   }
 };
+function getFrontmatterValue(frontmatter, fieldNames) {
+  if (!frontmatter || !Array.isArray(fieldNames)) return void 0;
+  for (const fieldName of fieldNames) {
+    if (fieldName in frontmatter) {
+      const value = frontmatter[fieldName];
+      if (typeof value === "string" && (value.toLowerCase() === "true" || value.toLowerCase() === "false")) {
+        return value.toLowerCase() === "true";
+      }
+      return value;
+    }
+  }
+  return void 0;
+}
 
 /* nosourcemap */

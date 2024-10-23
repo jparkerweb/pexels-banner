@@ -47,6 +47,11 @@
 /* -------------------------- */
 /* -- Settings Page Styles -- */
 /* -------------------------- */
+.vertical-tab-content-container {
+    display: flex;
+    flex-direction: column;
+}
+
 .pixel-banner-settings {
     padding: 20px;
     max-width: 800px;
@@ -112,7 +117,10 @@
     padding-top: 10px;
     padding-bottom: 10px;
 }
-
+.pixel-banner-settings .setting-item.full-width-control,
+.pixel-banner-settings .setting-item.full-width-control > .setting-item-control {
+    width: 100%;
+}
 .pixel-banner-settings .setting-item-control {
     justify-content: flex-end;
 }
