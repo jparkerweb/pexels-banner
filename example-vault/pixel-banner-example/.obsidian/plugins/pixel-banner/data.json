@@ -6,7 +6,7 @@
   "imageOrientation": "landscape",
   "numberOfImages": 3,
   "defaultKeywords": "nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns",
-  "yPosition": 35,
+  "yPosition": 50,
   "customBannerField": [
     "banner",
     "header-image"
@@ -25,17 +25,7 @@
   "customImageRepeatField": [
     "banner-repeat"
   ],
-  "folderImages": [
-    {
-      "folder": "notes",
-      "image": "images/jp-cover2.jpg",
-      "yPosition": 25,
-      "contentStartPosition": 70,
-      "imageDisplay": "cover",
-      "imageRepeat": true,
-      "bannerHeight": 250
-    }
-  ],
+  "folderImages": [],
   "contentStartPosition": 150,
   "imageDisplay": "cover",
   "imageRepeat": false,
@@ -43,6 +33,10 @@
   "customBannerHeightField": [
     "banner-height",
     "height"
+  ],
+  "fade": -75,
+  "customFadeField": [
+    "banner-fade"
   ],
   "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq"
 }
