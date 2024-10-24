@@ -24,6 +24,9 @@
 	transform: translateZ(0);
 	background-repeat: no-repeat;
 }
+.pixel-banner-image ~ div {
+    z-index: 1;
+}
 
 
 /* fix overflow issue with embedded notes */
