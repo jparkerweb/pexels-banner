@@ -95,9 +95,10 @@ You can set default banner images for entire folders:
    - Banner height (100-2500 pixels)
    - Fade effect (-1500 to 100)
    - Display mode and repeat settings
+   - Direct Children Only: Enable this option to apply the banner settings only to the direct children of the specified folder, excluding subfolders.
 5. Repeat for additional folders as needed
 
-Folder-specific settings will apply to all notes in that folder (and subfolders) that don't have their own banner specified in the frontmatter.
+Folder-specific settings will apply to all notes in that folder (and subfolders) that don't have their own banner specified in the frontmatter, unless the "Direct Children Only" option is enabled.
 
 ## Configuration
 
