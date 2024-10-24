@@ -70,6 +70,7 @@ class FolderImageSetting extends Setting {
         this.addImageDisplaySettings();
         this.addYPostionAndContentStart();
         this.addFadeAndBannerHeight();
+        this.addDirectChildrenOnlyToggle(); // Add this line
     }
 
     addDeleteButton(containerEl) {
@@ -309,6 +310,21 @@ class FolderImageSetting extends Setting {
         
         label.appendChild(sliderContainer);
         containerEl.appendChild(label);
+    }
+
+    // Add this method
+    addDirectChildrenOnlyToggle() {
+        new Setting(this.settingEl)
+            .setName("Direct Children Only")
+            .setDesc("Apply banner only to direct children of the folder")
+            .addToggle(toggle => {
+                toggle
+                    .setValue(this.folderImage.directChildrenOnly || false)
+                    .onChange(async (value) => {
+                        this.folderImage.directChildrenOnly = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
     }
 }
 

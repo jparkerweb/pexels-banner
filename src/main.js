@@ -54,12 +54,12 @@ module.exports = class PixelBannerPlugin extends Plugin {
             this.settings.folderImages.forEach(folderImage => {
                 folderImage.imageDisplay = folderImage.imageDisplay || 'cover';
                 folderImage.imageRepeat = folderImage.imageRepeat || false;
+                folderImage.directChildrenOnly = folderImage.directChildrenOnly || false; // New setting
             });
         }
     }
 
     migrateCustomFields() {
-        // console.log('Migrating custom fields');
         const fieldsToMigrate = [
             'customBannerField',
             'customYPositionField',
@@ -69,7 +69,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
         ];
 
         fieldsToMigrate.forEach(field => {
-            // console.log(`checking ${field}`);
             if (typeof this.settings[field] === 'string') {
                 console.log(`converting ${field} to array`);
                 this.settings[field] = [this.settings[field]];
@@ -92,7 +91,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
         // Trigger an update for the active leaf
         const activeLeaf = this.app.workspace.activeLeaf;
         if (activeLeaf && activeLeaf.view.getViewType() === "markdown") {
-            // console.log('saveSettings', activeLeaf.view);
             await this.updateBanner(activeLeaf.view, true);
         }
     }
@@ -343,7 +341,15 @@ module.exports = class PixelBannerPlugin extends Plugin {
     getFolderSpecificImage(filePath) {
         const folderPath = this.getFolderPath(filePath);
         for (const folderImage of this.settings.folderImages) {
-            if (folderPath.startsWith(folderImage.folder)) {
+            if (folderImage.directChildrenOnly) {
+                if (folderPath === folderImage.folder) {
+                    return {
+                        image: folderImage.image,
+                        yPosition: folderImage.yPosition,
+                        contentStartPosition: folderImage.contentStartPosition
+                    };
+                }
+            } else if (folderPath.startsWith(folderImage.folder)) {
                 return {
                     image: folderImage.image,
                     yPosition: folderImage.yPosition,
@@ -360,7 +366,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
     }
 
     async getImageUrl(type, input) {
-        // console.log('Entering getImageUrl with type:', type, 'and input:', input);
         if (type === 'url' || type === 'path') {
             return input;
         }
@@ -378,7 +383,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
         }
 
         if (type === 'keyword') {
-            // console.log('API Provider:', this.settings.apiProvider);
             if (this.settings.apiProvider === 'pexels') {
                 // console.log('Using Pexels API');
                 return this.fetchPexelsImage(input);
@@ -480,9 +484,7 @@ module.exports = class PixelBannerPlugin extends Plugin {
             // console.log('Pixabay API URL:', `${apiUrl}?${params}`);
 
             try {
-                // console.log('Calling makeRequest');
                 const response = await this.makeRequest(`${apiUrl}?${params}`);
-                // console.log('Response received:', response);
                 
                 if (response.status !== 200) {
                     console.error(`Pixabay API error: ${response.status} ${response.statusText}`);
@@ -491,9 +493,7 @@ module.exports = class PixelBannerPlugin extends Plugin {
 
                 let data;
                 if (response.arrayBuffer) {
-                    // console.log('Response contains arrayBuffer');
                     const text = new TextDecoder().decode(response.arrayBuffer);
-                    // console.log('Decoded text:', text);
                     try {
                         data = JSON.parse(text);
                     } catch (error) {
@@ -505,16 +505,12 @@ module.exports = class PixelBannerPlugin extends Plugin {
                     continue;
                 }
 
-                // console.log('Parsed data:', data);
-
                 if (data.hits && data.hits.length > 0) {
                     const imageUrls = data.hits.map(hit => hit.largeImageURL);
-                    // console.log(`Retrieved ${imageUrls.length} image URLs`);
                     
                     if (imageUrls.length > 0) {
                         const randomIndex = Math.floor(Math.random() * imageUrls.length);
                         const selectedImageUrl = imageUrls[randomIndex];
-                        // console.log('Selected image URL:', selectedImageUrl);
                         return selectedImageUrl;
                     }
                 }
@@ -531,8 +527,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
     }
 
     async makeRequest(url) {
-        // console.log('Entering makeRequest with URL:', url);
-        // Implement rate limiting
         const now = Date.now();
         if (now - this.rateLimiter.lastRequestTime < this.rateLimiter.minInterval) {
             // console.log('Rate limiting in effect, waiting...');
@@ -541,9 +535,7 @@ module.exports = class PixelBannerPlugin extends Plugin {
         this.rateLimiter.lastRequestTime = Date.now();
 
         try {
-            // console.log('Sending request');
             const response = await requestUrl({ url });
-            // console.log('Response received:', response);
             return response;
         } catch (error) {
             console.error('Request failed:', error);
@@ -564,7 +556,6 @@ module.exports = class PixelBannerPlugin extends Plugin {
         if (Array.isArray(input)) {
             input = input.flat()[0];
         }
-        console.log('input', input);
 
         if (typeof input !== 'string') {
             return 'invalid';
