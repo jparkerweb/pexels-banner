@@ -70,6 +70,7 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     this.addImageDisplaySettings();
     this.addYPostionAndContentStart();
     this.addFadeAndBannerHeight();
+    this.addDirectChildrenOnlyToggle();
   }
   addDeleteButton(containerEl) {
     const deleteButton = containerEl.createEl("button");
@@ -260,6 +261,15 @@ var FolderImageSetting = class extends import_obsidian.Setting {
     });
     label.appendChild(sliderContainer);
     containerEl.appendChild(label);
+  }
+  // Add this method
+  addDirectChildrenOnlyToggle() {
+    new import_obsidian.Setting(this.settingEl).setName("Direct Children Only").setDesc("Apply banner only to direct children of the folder").addToggle((toggle) => {
+      toggle.setValue(this.folderImage.directChildrenOnly || false).onChange(async (value) => {
+        this.folderImage.directChildrenOnly = value;
+        await this.plugin.saveSettings();
+      });
+    });
   }
 };
 function arrayToString(arr) {
@@ -758,6 +768,7 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
       this.settings.folderImages.forEach((folderImage) => {
         folderImage.imageDisplay = folderImage.imageDisplay || "cover";
         folderImage.imageRepeat = folderImage.imageRepeat || false;
+        folderImage.directChildrenOnly = folderImage.directChildrenOnly || false;
       });
     }
   }
@@ -969,7 +980,15 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
   getFolderSpecificImage(filePath) {
     const folderPath = this.getFolderPath(filePath);
     for (const folderImage of this.settings.folderImages) {
-      if (folderPath.startsWith(folderImage.folder)) {
+      if (folderImage.directChildrenOnly) {
+        if (folderPath === folderImage.folder) {
+          return {
+            image: folderImage.image,
+            yPosition: folderImage.yPosition,
+            contentStartPosition: folderImage.contentStartPosition
+          };
+        }
+      } else if (folderPath.startsWith(folderImage.folder)) {
         return {
           image: folderImage.image,
           yPosition: folderImage.yPosition,
@@ -1138,7 +1157,6 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     if (Array.isArray(input)) {
       input = input.flat()[0];
     }
-    console.log("input", input);
     if (typeof input !== "string") {
       return "invalid";
     }

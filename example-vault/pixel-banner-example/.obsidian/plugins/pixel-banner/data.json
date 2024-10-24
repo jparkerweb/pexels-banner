@@ -30,14 +30,10 @@
       "folder": "notes",
       "image": "[[jp-cover2.jpg]]",
       "yPosition": 50,
-      "contentStartPosition": 150
-    },
-    {
-      "folder": "notes/llama-notes",
-      "image": "",
-      "yPosition": 0,
       "contentStartPosition": 150,
-      "fade": -1500
+      "imageDisplay": "cover",
+      "imageRepeat": false,
+      "directChildrenOnly": true
     }
   ],
   "contentStartPosition": 150,
