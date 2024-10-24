@@ -1,10 +1,10 @@
 {
-  "apiProvider": "pixabay",
+  "apiProvider": "pexels",
   "pexelsApiKey": "",
   "pixabayApiKey": "",
   "imageSize": "medium",
   "imageOrientation": "landscape",
-  "numberOfImages": 3,
+  "numberOfImages": 10,
   "defaultKeywords": "nature, abstract, landscape, technology, art, cityscape, wildlife, ocean, mountains, forest, space, architecture, food, travel, science, music, sports, fashion, business, education, health, culture, history, weather, transportation, industry, people, animals, plants, patterns",
   "yPosition": 50,
   "customBannerField": [
@@ -27,19 +27,17 @@
   ],
   "folderImages": [
     {
-      "folder": "notes/llama-notes",
-      "image": "[[llamas.jpg]]",
-      "yPosition": 50,
-      "contentStartPosition": 170,
-      "imageDisplay": "contain",
-      "imageRepeat": true,
-      "bannerHeight": 200
-    },
-    {
       "folder": "notes",
-      "image": "images/jp-cover2.jpg",
+      "image": "[[jp-cover2.jpg]]",
       "yPosition": 50,
       "contentStartPosition": 150
+    },
+    {
+      "folder": "notes/llama-notes",
+      "image": "",
+      "yPosition": 0,
+      "contentStartPosition": 150,
+      "fade": -1500
     }
   ],
   "contentStartPosition": 150,
@@ -47,12 +45,10 @@
   "imageRepeat": false,
   "bannerHeight": 350,
   "customBannerHeightField": [
-    "banner-height",
-    "height"
+    "banner-height"
   ],
   "fade": -75,
   "customFadeField": [
     "banner-fade"
-  ],
-  "apiKey": "RoKgyYgLEu0BEzqw5Z4LMnknOquciriNYvtfEe2yHh0sbVLG422J58qq"
+  ]
 }

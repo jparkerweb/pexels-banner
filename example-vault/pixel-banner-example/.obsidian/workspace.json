@@ -8,7 +8,7 @@
         "type": "tabs",
         "children": [
           {
-            "id": "86ba2e88cf39775f",
+            "id": "bbf432e88ab26d1d",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -163,51 +163,17 @@
       "command-palette:Open command palette": false
     }
   },
-  "floating": {
-    "id": "6a61033fbf0ac54c",
-    "type": "floating",
-    "children": [
-      {
-        "id": "40a04a8278536fb3",
-        "type": "window",
-        "children": [
-          {
-            "id": "6c1171e1138ed899",
-            "type": "tabs",
-            "children": [
-              {
-                "id": "f603ebb21ca26992",
-                "type": "leaf",
-                "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "notes/llama-notes/llamas.md",
-                    "mode": "preview",
-                    "source": true
-                  },
-                  "icon": "lucide-file",
-                  "title": "llamas"
-                }
-              }
-            ]
-          }
-        ],
-        "direction": "vertical",
-        "x": 2248,
-        "y": 118,
-        "width": 1024,
-        "height": 800,
-        "maximize": false,
-        "zoom": 0
-      }
-    ]
-  },
-  "active": "86ba2e88cf39775f",
+  "active": "bbf432e88ab26d1d",
   "lastOpenFiles": [
+    "notes/📜 Embedded Note with Banner.md",
     "notes/📃 Embedded Note.md",
     "notes/llama-notes/llamas.md",
-    "notes/📜 Embedded Note with Banner.md",
     "🚩 Pixel-Banner.md",
+    "tests/🧪 test - 4 - all fields.md",
+    "tests/🧪 test - 3 - direct url link.md",
+    "tests/🧪 test - 2 - internal link - quoted.md",
+    "tests/🧪 test - 1 - internal link.md",
+    "tests",
     "notes/llama-notes",
     "images/llamas.jpg",
     "images/forest.jpg",
@@ -218,7 +184,6 @@
     "images/jp-cover3.jpg",
     "images/jp-cover2.jpg",
     "banners/banner.jpg",
-    "test.md",
     "bay.md",
     "🚩 Pexels-Banner.md",
     "Clippings/Official Obsidian web clipper now available!  rObsidianMD.md",

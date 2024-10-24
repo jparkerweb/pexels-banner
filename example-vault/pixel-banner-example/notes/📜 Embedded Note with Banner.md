@@ -1,7 +1,7 @@
 ---
 header-image: images/jp-cover3a.jpg
-banner-y: 20
-content-start: "177"
+y: 20
+content-start: 177
 ---
 # Embedded Note with its own Banner
 

@@ -150,6 +150,12 @@ module.exports = class PixelBannerPlugin extends Plugin {
         let contentStartPosition = this.settings.contentStartPosition;
         let bannerImage = getFrontmatterValue(frontmatter, this.settings.customBannerField);
 
+        // Flatten the bannerImage if it's an array within an array
+        if (Array.isArray(bannerImage)) {
+            bannerImage = bannerImage.flat()[0];
+            bannerImage = `[[${bannerImage}]]`;
+        }
+
         // Check for folder-specific settings
         const folderSpecific = this.getFolderSpecificImage(view.file.path);
         if (folderSpecific) {
@@ -555,6 +561,11 @@ module.exports = class PixelBannerPlugin extends Plugin {
     }
 
     getInputType(input) {
+        if (Array.isArray(input)) {
+            input = input.flat()[0];
+        }
+        console.log('input', input);
+
         if (typeof input !== 'string') {
             return 'invalid';
         }
@@ -563,7 +574,7 @@ module.exports = class PixelBannerPlugin extends Plugin {
         input = input.trim().replace(/^["'](.*)["']$/, '$1');
 
         // Check if it's an Obsidian internal link
-        if (input.includes('[[') && input.includes(']]')) {
+        if (input.startsWith('[[') && input.endsWith(']]')) {
             return 'obsidianLink';
         }
         

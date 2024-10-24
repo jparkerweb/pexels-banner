@@ -835,6 +835,10 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     let yPosition = this.settings.yPosition;
     let contentStartPosition = this.settings.contentStartPosition;
     let bannerImage = getFrontmatterValue(frontmatter, this.settings.customBannerField);
+    if (Array.isArray(bannerImage)) {
+      bannerImage = bannerImage.flat()[0];
+      bannerImage = `[[${bannerImage}]]`;
+    }
     const folderSpecific = this.getFolderSpecificImage(view.file.path);
     if (folderSpecific) {
       bannerImage = bannerImage || folderSpecific.image;
@@ -1131,11 +1135,15 @@ module.exports = class PixelBannerPlugin extends import_obsidian2.Plugin {
     });
   }
   getInputType(input) {
+    if (Array.isArray(input)) {
+      input = input.flat()[0];
+    }
+    console.log("input", input);
     if (typeof input !== "string") {
       return "invalid";
     }
     input = input.trim().replace(/^["'](.*)["']$/, "$1");
-    if (input.includes("[[") && input.includes("]]")) {
+    if (input.startsWith("[[") && input.endsWith("]]")) {
       return "obsidianLink";
     }
     try {
