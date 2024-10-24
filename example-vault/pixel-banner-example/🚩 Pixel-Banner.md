@@ -18,3 +18,25 @@ banner: "[[forest.jpg]]"
 <br>
 
 ![[📜 Embedded Note with Banner]]
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
+
+.
