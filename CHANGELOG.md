@@ -2,7 +2,7 @@
 
 All notable changes to the Pixel Banner plugin will be documented in this file.
 
-## [2.2.1] - 2024-10-24
+## [2.2.2] - 2024-10-24
 
 ### Added
 - Banner Height: Customize the height of banner images (100-2500 pixels; default 350)
@@ -25,6 +25,7 @@ All notable changes to the Pixel Banner plugin will be documented in this file.
 
 ### Fixed
 - Fixed issue where banner image was not being displayed if it was an interal link not wrapped in quotes
+- Fixed issue where the banner image z-index was overlapping the properties block
 
 ## [2.1.0] - 2024-10-22
 
